@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Notificaciones')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: barra}"></header>
+<div class="d-lg-flex">
+    <nav th:replace="~{fragments/layout :: menu}"></nav>
+    <main class="contenido flex-grow-1 p-3 p-md-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <h1 class="h4 m-0">Notificaciones</h1>
+            <form th:action="@{/notificaciones/marcar-todas}" method="post" th:if="${notificacionesNoLeidas > 0}">
+                <button type="submit" class="btn btn-outline-dark btn-sm">Marcar todas como leídas</button>
+            </form>
+        </div>
+        <div th:if="${#lists.isEmpty(notificaciones)}" class="alert alert-light border" role="status">
+            No tienes notificaciones.
+        </div>
+        <div class="list-group" th:unless="${#lists.isEmpty(notificaciones)}">
+            <a th:each="notificacion : ${notificaciones}"
+               th:href="@{/notificaciones/{id}(id=${notificacion.id})}"
+               class="list-group-item list-group-item-action"
+               th:classappend="${notificacion.leida} ? '' : 'notificacion-nueva'">
+                <div class="d-flex justify-content-between gap-2">
+                    <span th:class="${notificacion.leida} ? '' : 'fw-bold'" th:text="${notificacion.titulo}">Título</span>
+                    <small class="text-muted text-nowrap"
+                           th:text="${#temporals.format(notificacion.fecha, 'dd/MM/yyyy HH:mm')}">Fecha</small>
+                </div>
+                <div class="small" th:text="${notificacion.mensaje}">Mensaje</div>
+                <span th:unless="${notificacion.leida}" class="badge bg-success mt-1">Nueva</span>
+            </a>
+        </div>
+    </main>
+</div>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

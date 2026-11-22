@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "multijunta",
+      "runtimeExecutable": "C:\\Users\\JC\\multijunta\\mvnw.cmd",
+      "runtimeArgs": ["-q", "-f", "C:\\Users\\JC\\multijunta\\pom.xml", "spring-boot:run"],
+      "port": 8080
+    }
+  ]
+}

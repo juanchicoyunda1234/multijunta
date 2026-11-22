@@ -1,0 +1,16 @@
+package ec.uta.multijunta.config;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.web.access.AccessDeniedHandler;
+
+public class ManejadorAccesoDenegado implements AccessDeniedHandler {
+
+    @Override
+    public void handle(HttpServletRequest request, HttpServletResponse response, AccessDeniedException excepcion)
+            throws IOException {
+        response.sendError(HttpServletResponse.SC_FORBIDDEN);
+    }
+}

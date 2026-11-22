@@ -1,0 +1,82 @@
+:root {
+    --verde: #16A34A;
+    --verde-oscuro: #15803D;
+}
+
+body {
+    background-color: #F8F9FA;
+    color: #111111;
+    overflow-x: hidden;
+}
+
+.text-verde {
+    color: var(--verde);
+}
+
+.btn-verde {
+    background-color: var(--verde);
+    border-color: var(--verde);
+    color: #FFFFFF;
+}
+
+.btn-verde:hover,
+.btn-verde:focus {
+    background-color: var(--verde-oscuro);
+    border-color: var(--verde-oscuro);
+    color: #FFFFFF;
+}
+
+.barra-superior {
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+    min-height: 56px;
+}
+
+.usuario-boton {
+    max-width: 14rem;
+}
+
+.menu-lateral {
+    background-color: #FFFFFF;
+}
+
+.menu-lateral .nav-link {
+    color: #111111;
+    padding: 0.6rem 1rem;
+    border-left: 3px solid transparent;
+}
+
+.menu-lateral .nav-link:hover {
+    background-color: #F0FDF4;
+    border-left-color: var(--verde);
+}
+
+@media (min-width: 992px) {
+    .menu-lateral {
+        width: 260px;
+        min-height: calc(100vh - 56px);
+        flex-shrink: 0;
+    }
+}
+
+.contenido {
+    min-width: 0;
+}
+
+.tarjeta-acceso {
+    width: 100%;
+    max-width: 420px;
+}
+
+.notificacion-nueva {
+    background-color: #F0FDF4;
+    border-left: 4px solid var(--verde);
+}
+
+.temporal {
+    font-family: monospace;
+    font-size: 1.4rem;
+    letter-spacing: 0.1rem;
+    word-break: break-all;
+}

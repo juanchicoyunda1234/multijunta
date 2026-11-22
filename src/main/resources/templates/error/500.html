@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Error del sistema')}"></head>
+<body class="d-flex align-items-center justify-content-center min-vh-100 p-3">
+<main class="tarjeta-acceso text-center">
+    <p class="display-4 fw-bold text-verde mb-0">500</p>
+    <h1 class="h4">Error del sistema</h1>
+    <p class="text-muted">Ocurrió un problema inesperado. Intenta de nuevo en unos minutos.</p>
+    <a th:href="@{/inicio}" class="btn btn-verde">Volver al inicio</a>
+</main>
+</body>
+</html>

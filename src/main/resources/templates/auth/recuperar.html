@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Recuperar contraseña')}"></head>
+<body class="d-flex align-items-center justify-content-center min-vh-100 p-3">
+<main class="tarjeta-acceso">
+    <div class="text-center mb-4">
+        <h1 class="h3 fw-bold">Recuperar contraseña</h1>
+        <p class="text-muted mb-0">La directiva de tu junta verificará tu identidad y te entregará una contraseña temporal.</p>
+    </div>
+    <div class="card shadow-sm">
+        <div class="card-body p-4">
+            <div th:if="${param.enviada}" class="alert alert-success" role="alert" th:text="#{recuperar.enviada}"></div>
+            <form th:action="@{/recuperar}" method="post">
+                <div class="mb-3">
+                    <label for="identificador" class="form-label">Cédula o usuario</label>
+                    <input type="text" id="identificador" name="identificador" class="form-control" required
+                           maxlength="50" autofocus>
+                </div>
+                <button type="submit" class="btn btn-verde w-100">Enviar solicitud</button>
+            </form>
+            <div class="text-center mt-3">
+                <a th:href="@{/login}" class="link-dark">Volver al inicio de sesión</a>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>

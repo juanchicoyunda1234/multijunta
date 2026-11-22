@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Iniciar sesión')}"></head>
+<body class="d-flex align-items-center justify-content-center min-vh-100 p-3">
+<main class="tarjeta-acceso">
+    <div class="text-center mb-4">
+        <h1 class="h3 fw-bold">Aqua<span class="text-verde">Tenant</span></h1>
+        <p class="text-muted mb-0">Sistema Multi-Junta de Gestión Integral</p>
+    </div>
+    <div class="card shadow-sm">
+        <div class="card-body p-4">
+            <div th:if="${param.error}" class="alert alert-danger" role="alert" th:text="#{login.error}"></div>
+            <div th:if="${param.bloqueada}" class="alert alert-danger" role="alert" th:text="#{login.bloqueada}"></div>
+            <div th:if="${param.desactivada}" class="alert alert-danger" role="alert" th:text="#{login.desactivada}"></div>
+            <div th:if="${param.suspendida}" class="alert alert-danger" role="alert" th:text="#{login.suspendida}"></div>
+            <div th:if="${param.expirada}" class="alert alert-warning" role="alert" th:text="#{login.expirada}"></div>
+            <div th:if="${param.salio}" class="alert alert-info" role="alert" th:text="#{login.salio}"></div>
+            <form th:action="@{/login}" method="post">
+                <div class="mb-3">
+                    <label for="username" class="form-label">Usuario</label>
+                    <input type="text" id="username" name="username" class="form-control" required
+                           autocomplete="username" autofocus>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Contraseña</label>
+                    <input type="password" id="password" name="password" class="form-control" required
+                           autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn btn-verde w-100">Iniciar Sesión</button>
+            </form>
+            <div class="text-center mt-3">
+                <a th:href="@{/recuperar}" class="link-dark">¿Olvidaste tu contraseña?</a>
+            </div>
+        </div>
+    </div>
+</main>
+</body>
+</html>
