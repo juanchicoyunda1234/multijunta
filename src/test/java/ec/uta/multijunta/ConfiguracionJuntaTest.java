@@ -13,9 +13,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import ec.uta.multijunta.model.EstadoSocio;
 import ec.uta.multijunta.model.Junta;
+import ec.uta.multijunta.model.Recurso;
 import ec.uta.multijunta.model.Rol;
 import ec.uta.multijunta.model.Sector;
+import ec.uta.multijunta.model.Socio;
 import ec.uta.multijunta.model.Usuario;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import ec.uta.multijunta.repository.JuntaRepository;
 import ec.uta.multijunta.repository.SectorRepository;
 import java.math.BigDecimal;
@@ -137,11 +141,32 @@ class ConfiguracionJuntaTest {
         Sector conSocios = fabrica.sector(junta);
         fabrica.socioSinCuenta(junta, conSocios, EstadoSocio.ACTIVO);
         Sector libre = fabrica.sector(junta);
+        String mensaje = "No se puede quitar un sector con socios, predios, recursos o turnos asignados";
         mvc.perform(guardar().param("direccion", "Calle 1").param("sectoresQuitados", conSocios.getId().toString()))
-                .andExpect(content().string(containsString("No se puede quitar un sector con socios asignados")));
+                .andExpect(content().string(containsString(mensaje)));
         mvc.perform(guardar().param("direccion", "Calle 1").param("sectoresQuitados", libre.getId().toString()))
                 .andExpect(redirectedUrl(RUTA));
         assertThat(sectores.findAllByJuntaId(junta.getId())).extracting(Sector::getId).containsExactly(conSocios.getId());
+    }
+
+    @Test
+    @DisplayName("FR-033 (003) no se quita un sector con predios, recursos o turnos")
+    void sectorConPrediosRecursosOTurnos() throws Exception {
+        String mensaje = "No se puede quitar un sector con socios, predios, recursos o turnos asignados";
+        Sector sectorSocio = fabrica.sector(junta);
+        Socio socio = fabrica.socio(junta, sectorSocio);
+        Sector conPredio = fabrica.sector(junta);
+        fabrica.predio(socio, conPredio);
+        Sector conRecurso = fabrica.sector(junta);
+        Recurso recurso = fabrica.recurso(junta, conRecurso, "Compuerta Sector");
+        Sector conTurno = fabrica.sector(junta);
+        fabrica.turno(junta, conTurno, recurso, Fabrica.proximoDiaLaboral(LocalDate.now()), LocalTime.of(8, 0),
+                LocalTime.of(10, 0));
+        for (Sector sector : List.of(conPredio, conRecurso, conTurno)) {
+            mvc.perform(guardar().param("direccion", "Calle 1").param("sectoresQuitados", sector.getId().toString()))
+                    .andExpect(content().string(containsString(mensaje)));
+        }
+        assertThat(sectores.findAllByJuntaId(junta.getId())).hasSize(4);
     }
 
     @Test

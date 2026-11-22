@@ -22,4 +22,15 @@ public class SocioService {
         }
         return socios.save(socio);
     }
+
+    @Transactional(readOnly = true)
+    public String siguienteCodigo(Long juntaId) {
+        long numero = socios.countByJuntaId(juntaId) + 1;
+        String codigo = String.format("S-%04d", numero);
+        while (socios.existsByCodigoSocioAndJuntaId(codigo, juntaId)) {
+            numero++;
+            codigo = String.format("S-%04d", numero);
+        }
+        return codigo;
+    }
 }

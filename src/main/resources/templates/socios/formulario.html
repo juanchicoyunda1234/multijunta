@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Ficha de socio')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: barra}"></header>
+<div class="d-lg-flex">
+    <nav th:replace="~{fragments/layout :: menu}"></nav>
+    <main class="contenido flex-grow-1 p-3 p-md-4">
+        <h1 class="h4 mb-3" th:text="${socioId == null} ? 'Añadir nuevo socio' : 'Editar socio'">Socio</h1>
+        <div th:replace="~{fragments/layout :: mensajes}"></div>
+        <div th:if="${#lists.isEmpty(sectores)}" class="alert alert-warning" th:text="#{sector.ninguno}">Sin sectores</div>
+        <form method="post" th:object="${socioFormulario}" novalidate id="formularioSocio"
+              th:action="${socioId == null} ? @{/socios} : @{/socios/{id}(id=${socioId})}">
+            <div class="row g-3">
+                <div class="col-lg-6">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header bg-white fw-semibold">Datos Personales</div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="cedula" class="form-label">Cédula de identidad</label>
+                                <input type="text" id="cedula" class="form-control" th:field="*{cedula}" maxlength="10"
+                                       inputmode="numeric" th:readonly="${socioId != null}" th:errorclass="is-invalid"
+                                       aria-describedby="ayudaCedula">
+                                <div id="ayudaCedula" class="form-text text-danger d-none" th:text="#{socio.cedulaAyuda}">Ayuda</div>
+                                <div class="invalid-feedback" th:errors="*{cedula}"></div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="nombres" class="form-label">Nombres</label>
+                                <input type="text" id="nombres" class="form-control" th:field="*{nombres}" maxlength="100" th:errorclass="is-invalid">
+                                <div class="invalid-feedback" th:errors="*{nombres}"></div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="apellidos" class="form-label">Apellidos</label>
+                                <input type="text" id="apellidos" class="form-control" th:field="*{apellidos}" maxlength="100" th:errorclass="is-invalid">
+                                <div class="invalid-feedback" th:errors="*{apellidos}"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header bg-white fw-semibold">Datos de Contacto</div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="celular" class="form-label">Teléfono / celular</label>
+                                <input type="text" id="celular" class="form-control" th:field="*{celular}" maxlength="10"
+                                       inputmode="numeric" placeholder="Ej: 0991234567" th:errorclass="is-invalid">
+                                <div class="invalid-feedback" th:errors="*{celular}"></div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="sectorId" class="form-label">Sector o ramal asignado</label>
+                                <select id="sectorId" class="form-select" th:field="*{sectorId}" th:errorclass="is-invalid">
+                                    <option value="">Seleccionar sector...</option>
+                                    <option th:each="sector : ${sectores}" th:value="${sector.id}" th:text="${sector.nombre}">Sector</option>
+                                </select>
+                                <div class="invalid-feedback" th:errors="*{sectorId}"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex justify-content-end gap-2 mt-3">
+                <a class="btn btn-outline-dark" th:href="${socioId == null} ? @{/socios} : @{/socios/{id}(id=${socioId})}">Cancelar</a>
+                <button type="submit" class="btn btn-verde" id="botonGuardarSocio"
+                        th:disabled="${#lists.isEmpty(sectores)}">Guardar Ficha de Socio</button>
+            </div>
+        </form>
+    </main>
+</div>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+<script>
+    const campoCedula = document.getElementById('cedula');
+    const botonGuardar = document.getElementById('botonGuardarSocio');
+    const ayudaCedula = document.getElementById('ayudaCedula');
+    const sinSectores = botonGuardar.disabled;
+
+    function validarCedula() {
+        const valida = /^\d{10}$/.test(campoCedula.value.trim());
+        botonGuardar.disabled = sinSectores || !valida;
+        ayudaCedula.classList.toggle('d-none', valida || campoCedula.value.length === 0);
+    }
+
+    campoCedula.addEventListener('input', validarCedula);
+    validarCedula();
+</script>
+</body>
+</html>

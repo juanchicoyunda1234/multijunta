@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Correcciones de asistencia')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: barra}"></header>
+<div class="d-lg-flex">
+    <nav th:replace="~{fragments/layout :: menu}"></nav>
+    <main class="contenido flex-grow-1 p-3 p-md-4">
+        <h1 class="h4 mb-3">Correcciones de asistencia</h1>
+        <div th:replace="~{fragments/layout :: mensajes}"></div>
+        <div th:if="${#lists.isEmpty(correcciones)}" class="alert alert-light border">No hay solicitudes de corrección.</div>
+        <div class="table-responsive" th:unless="${#lists.isEmpty(correcciones)}">
+            <table class="table align-middle bg-white">
+                <thead>
+                <tr>
+                    <th scope="col">Socio y evento</th>
+                    <th scope="col">Cambio</th>
+                    <th scope="col">Motivo</th>
+                    <th scope="col">Solicitó</th>
+                    <th scope="col">Resolvió</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col" class="text-end" th:if="${puedeResolver}">Acción</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="correccion : ${correcciones}" th:with="asistencia=${correccion.asistencia}">
+                    <td>
+                        <div class="fw-semibold" th:text="${asistencia.socio.nombreCompleto}">Socio</div>
+                        <div class="small text-muted"
+                             th:text="${asistencia.evento.tipo.etiqueta} + ' · ' + ${#temporals.format(asistencia.evento.fecha, 'dd/MM/yyyy')}">Evento</div>
+                    </td>
+                    <td th:text="${correccion.estadoAnterior.etiqueta} + ' → ' + ${correccion.estadoNuevo.etiqueta}">Cambio</td>
+                    <td th:text="${correccion.motivo}">Motivo</td>
+                    <td>
+                        <div th:text="${correccion.solicitante.nombreCompleto}">Solicitante</div>
+                        <div class="small text-muted" th:text="${#temporals.format(correccion.fechaSolicitud, 'dd/MM/yyyy HH:mm')}">Fecha</div>
+                    </td>
+                    <td>
+                        <div th:if="${correccion.resolutor != null}" th:text="${correccion.resolutor.nombreCompleto}">Resolutor</div>
+                        <div class="small text-muted" th:if="${correccion.fechaResolucion != null}"
+                             th:text="${#temporals.format(correccion.fechaResolucion, 'dd/MM/yyyy HH:mm')}">Fecha</div>
+                    </td>
+                    <td><span class="badge bg-dark" th:text="${correccion.estado.etiqueta}">Estado</span></td>
+                    <td class="text-end text-nowrap" th:if="${puedeResolver}">
+                        <th:block th:if="${correccion.estado.name() == 'PENDIENTE'}">
+                            <form method="post" class="d-inline" th:action="@{/asistencia/correcciones/{id}/aprobar(id=${correccion.id})}">
+                                <button type="submit" class="btn btn-verde btn-sm">Aprobar</button>
+                            </form>
+                            <form method="post" class="d-inline" th:action="@{/asistencia/correcciones/{id}/rechazar(id=${correccion.id})}">
+                                <button type="submit" class="btn btn-outline-danger btn-sm">Rechazar</button>
+                            </form>
+                        </th:block>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

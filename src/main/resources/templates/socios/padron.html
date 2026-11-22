@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Padrón de Miembros')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: barra}"></header>
+<div class="d-lg-flex">
+    <nav th:replace="~{fragments/layout :: menu}"></nav>
+    <main class="contenido flex-grow-1 p-3 p-md-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <h1 class="h4 m-0">Padrón de Miembros</h1>
+            <a th:if="${puedeEditar}" class="btn btn-verde" th:href="@{/socios/nuevo}">Añadir Nuevo Socio</a>
+        </div>
+        <div th:replace="~{fragments/layout :: mensajes}"></div>
+        <form class="mb-3" method="get" th:action="@{/socios}" role="search">
+            <div class="input-group">
+                <input type="search" name="q" class="form-control" th:value="${q}"
+                       placeholder="Buscar por cédula o nombre" aria-label="Buscar por cédula o nombre">
+                <button class="btn btn-outline-dark" type="submit">Buscar</button>
+            </div>
+        </form>
+        <div th:if="${#lists.isEmpty(socios)}" class="alert alert-light border">No hay socios para mostrar.</div>
+        <div class="table-responsive" th:unless="${#lists.isEmpty(socios)}">
+            <table class="table table-hover align-middle bg-white">
+                <thead>
+                <tr>
+                    <th scope="col">Código</th>
+                    <th scope="col">Socio</th>
+                    <th scope="col">Cédula</th>
+                    <th scope="col">Sector</th>
+                    <th scope="col">Celular</th>
+                    <th scope="col">Estado</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="socio : ${socios}">
+                    <td th:text="${socio.codigoSocio}">S-0001</td>
+                    <td><a class="link-dark fw-semibold" th:href="@{/socios/{id}(id=${socio.id})}"
+                           th:text="${socio.nombreCompleto}">Socio</a></td>
+                    <td th:text="${socio.cedula}">Cédula</td>
+                    <td th:text="${socio.sector.nombre}">Sector</td>
+                    <td th:text="${socio.celular}">Celular</td>
+                    <td>
+                        <span th:if="${socio.estado.name() == 'ACTIVO'}" class="badge bg-success">Activo</span>
+                        <span th:unless="${socio.estado.name() == 'ACTIVO'}" class="badge bg-secondary">Inactivo</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

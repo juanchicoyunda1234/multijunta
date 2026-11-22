@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Calendario de Servicios')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: barra}"></header>
+<div class="d-lg-flex">
+    <nav th:replace="~{fragments/layout :: menu}"></nav>
+    <main class="contenido flex-grow-1 p-3 p-md-4">
+        <h1 class="h4 mb-3">Calendario de Servicios</h1>
+        <ul class="nav nav-tabs mb-3">
+            <li class="nav-item"><a class="nav-link active" aria-current="page" th:href="@{/turnos}">Calendario</a></li>
+            <li class="nav-item"><a class="nav-link" th:href="@{/recursos}">Recursos</a></li>
+        </ul>
+        <div th:replace="~{fragments/layout :: mensajes}"></div>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <a class="btn btn-outline-dark btn-sm" th:href="@{/turnos(semana=${semanaAnterior})}" aria-label="Semana anterior">&laquo;</a>
+            <span class="fw-semibold"
+                  th:text="'Semana del ' + ${#temporals.format(lunes, 'dd/MM/yyyy')} + ' al ' + ${#temporals.format(lunes.plusDays(4), 'dd/MM/yyyy')}">Semana</span>
+            <a class="btn btn-outline-dark btn-sm" th:href="@{/turnos(semana=${semanaSiguiente})}" aria-label="Semana siguiente">&raquo;</a>
+        </div>
+        <div class="calendario-semana">
+            <section class="dia-semana" th:each="dia : ${dias}" th:classappend="${dia.fecha.equals(hoy)} ? 'dia-hoy'"
+                     th:attr="aria-label='Turnos del ' + ${#temporals.format(dia.fecha, 'dd/MM/yyyy')}">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="fw-semibold small" th:text="${dia.etiqueta}">LUN 21</span>
+                    <button th:if="${puedeEditar}" type="button" class="btn btn-verde btn-sm py-0 boton-agendar"
+                            th:data-fecha="${dia.fecha}" aria-label="Agendar turno">+ Agendar</button>
+                </div>
+                <div th:if="${#lists.isEmpty(dia.turnos)}" class="small text-muted">Sin turnos</div>
+                <div class="bloque-turno" th:each="turno : ${dia.turnos}"
+                     th:style="'border-left-color: hsl(' + ${(turno.sector.id * 67) % 360} + ', 60%, 40%)'">
+                    <div class="fw-semibold"
+                         th:text="${#temporals.format(turno.horaInicio, 'HH:mm')} + '–' + ${#temporals.format(turno.horaFin, 'HH:mm')}">08:00</div>
+                    <div th:text="${turno.sector.nombre}">Sector</div>
+                    <div class="text-muted" th:text="${turno.recurso.nombre}">Recurso</div>
+                    <div class="text-muted" th:text="${turno.responsable}">Responsable</div>
+                    <button th:if="${puedeEditar}" type="button" class="btn btn-link btn-sm p-0 boton-reprogramar"
+                            th:data-id="${turno.id}" th:data-fecha="${turno.fecha}"
+                            th:data-inicio="${#temporals.format(turno.horaInicio, 'HH:mm')}"
+                            th:data-fin="${#temporals.format(turno.horaFin, 'HH:mm')}">Reprogramar</button>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+
+<div class="modal fade" id="modalAgendar" tabindex="-1" aria-labelledby="tituloAgendar" aria-hidden="true">
+    <div class="modal-dialog">
+        <form class="modal-content" method="post" th:action="@{/turnos}" th:object="${turnoFormulario}" novalidate>
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="tituloAgendar">Agendar horario</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger" role="alert" th:if="${#fields.hasGlobalErrors()}"
+                     th:each="error : ${#fields.globalErrors()}" th:text="${error}"></div>
+                <div class="mb-3">
+                    <label for="agendarFecha" class="form-label">Día</label>
+                    <input type="date" id="agendarFecha" class="form-control" th:field="*{fecha}" th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{fecha}"></div>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col">
+                        <label for="agendarInicio" class="form-label">Desde</label>
+                        <input type="time" id="agendarInicio" class="form-control" th:field="*{horaInicio}" th:errorclass="is-invalid">
+                    </div>
+                    <div class="col">
+                        <label for="agendarFin" class="form-label">Hasta</label>
+                        <input type="time" id="agendarFin" class="form-control" th:field="*{horaFin}" th:errorclass="is-invalid">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="agendarSector" class="form-label">Sector</label>
+                    <select id="agendarSector" class="form-select" th:field="*{sectorId}" th:errorclass="is-invalid">
+                        <option value="">Seleccione</option>
+                        <option th:each="sector : ${sectores}" th:value="${sector.id}" th:text="${sector.nombre}">Sector</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="agendarRecurso" class="form-label">Recurso</label>
+                    <select id="agendarRecurso" class="form-select" th:field="*{recursoId}" th:errorclass="is-invalid">
+                        <option value="">Seleccione</option>
+                        <option th:each="recurso : ${recursos}" th:value="${recurso.id}"
+                                th:text="${recurso.nombre} + ' (' + ${recurso.caudal} + ' L/s · ' + ${recurso.sector.nombre} + ')'">Recurso</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="agendarResponsable" class="form-label">Responsable</label>
+                    <input type="text" id="agendarResponsable" class="form-control" th:field="*{responsable}" maxlength="100" th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{responsable}"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-verde">Agendar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="modalReprogramar" tabindex="-1" aria-labelledby="tituloReprogramar" aria-hidden="true">
+    <div class="modal-dialog">
+        <form id="formularioReprogramar" class="modal-content" method="post"
+              th:action="${reprogramarId != null} ? @{/turnos/{id}(id=${reprogramarId})} : @{/turnos/0}">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="tituloReprogramar">Reprogramar turno</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="reprogramarFecha" class="form-label">Día</label>
+                    <input type="date" id="reprogramarFecha" name="fecha" class="form-control" required>
+                </div>
+                <div class="row g-2">
+                    <div class="col">
+                        <label for="reprogramarInicio" class="form-label">Desde</label>
+                        <input type="time" id="reprogramarInicio" name="horaInicio" class="form-control" required>
+                    </div>
+                    <div class="col">
+                        <label for="reprogramarFin" class="form-label">Hasta</label>
+                        <input type="time" id="reprogramarFin" name="horaFin" class="form-control" required>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-verde">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+<script th:inline="javascript">
+    const abrir = [[${abrir}]];
+    document.querySelectorAll('.boton-agendar').forEach(function (boton) {
+        boton.addEventListener('click', function () {
+            document.getElementById('agendarFecha').value = boton.dataset.fecha;
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('modalAgendar')).show();
+        });
+    });
+    document.querySelectorAll('.boton-reprogramar').forEach(function (boton) {
+        boton.addEventListener('click', function () {
+            const formulario = document.getElementById('formularioReprogramar');
+            formulario.action = formulario.action.replace(/\/turnos\/\d+$/, '/turnos/' + boton.dataset.id);
+            document.getElementById('reprogramarFecha').value = boton.dataset.fecha;
+            document.getElementById('reprogramarInicio').value = boton.dataset.inicio;
+            document.getElementById('reprogramarFin').value = boton.dataset.fin;
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('modalReprogramar')).show();
+        });
+    });
+    if (abrir === 'agendar') {
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalAgendar')).show();
+    }
+</script>
+</body>
+</html>

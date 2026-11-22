@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Perfil del socio')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: barra}"></header>
+<div class="d-lg-flex">
+    <nav th:replace="~{fragments/layout :: menu}"></nav>
+    <main class="contenido flex-grow-1 p-3 p-md-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <h1 class="h4 m-0" th:text="${socio.nombreCompleto}">Socio</h1>
+            <a class="btn btn-outline-dark" th:href="@{/socios}">Volver al padrón</a>
+        </div>
+        <div th:replace="~{fragments/layout :: mensajes}"></div>
+        <div class="card shadow-sm mb-3">
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-3">Código</dt>
+                    <dd class="col-sm-9" th:text="${socio.codigoSocio}">S-0001</dd>
+                    <dt class="col-sm-3">Cédula</dt>
+                    <dd class="col-sm-9" th:text="${socio.cedula}">Cédula</dd>
+                    <dt class="col-sm-3">Sector</dt>
+                    <dd class="col-sm-9" th:text="${socio.sector.nombre}">Sector</dd>
+                    <dt class="col-sm-3">Celular</dt>
+                    <dd class="col-sm-9" th:text="${socio.celular} ?: '—'">Celular</dd>
+                    <dt class="col-sm-3">Fecha de ingreso</dt>
+                    <dd class="col-sm-9" th:text="${#temporals.format(socio.fechaIngreso, 'dd/MM/yyyy')}">Fecha</dd>
+                    <dt class="col-sm-3">Estado</dt>
+                    <dd class="col-sm-9" th:text="${socio.estado.name() == 'ACTIVO'} ? 'Activo' : 'Inactivo'">Estado</dd>
+                </dl>
+            </div>
+            <div class="card-footer bg-white d-flex flex-wrap gap-2" th:if="${puedeEditar}">
+                <a class="btn btn-outline-dark btn-sm" th:href="@{/socios/{id}/editar(id=${socio.id})}">Editar</a>
+                <form method="post" th:action="@{/socios/{id}/estado(id=${socio.id})}" class="d-inline">
+                    <input type="hidden" name="estado" th:value="${socio.estado.name() == 'ACTIVO'} ? 'INACTIVO' : 'ACTIVO'">
+                    <button type="submit" class="btn btn-outline-dark btn-sm"
+                            th:text="${socio.estado.name() == 'ACTIVO'} ? 'Pasar a INACTIVO' : 'Pasar a ACTIVO'">Estado</button>
+                </form>
+                <a class="btn btn-verde btn-sm" th:href="@{/predios/nuevo(socioId=${socio.id})}">Asignar Predio</a>
+            </div>
+        </div>
+        <section th:if="${verPredios}" aria-labelledby="tituloPredios">
+            <h2 class="h5" id="tituloPredios">Predios</h2>
+            <div th:if="${#lists.isEmpty(predios)}" class="alert alert-light border">El socio no tiene predios registrados.</div>
+            <div class="row row-cols-1 row-cols-md-2 g-3">
+                <div class="col" th:each="predio : ${predios}">
+                    <div class="card shadow-sm h-100">
+                        <div class="mapa-mini" th:id="'mapa-predio-' + ${predio.id}"
+                             th:data-lat="${predio.latitud}" th:data-lng="${predio.longitud}"></div>
+                        <div class="card-body">
+                            <div class="fw-semibold" th:text="${predio.codigo} + ' · ' + ${predio.sector.nombre}">Predio</div>
+                            <div class="small text-muted" th:text="${predio.area} + ' m²'">Área</div>
+                            <div class="small text-muted" th:if="${predio.ubicacion != null}" th:text="${predio.ubicacion}">Referencia</div>
+                            <img th:if="${predio.fotoNombre != null}" class="foto-predio mt-2"
+                                 th:src="@{/predios/{id}/foto(id=${predio.id})}" th:alt="'Foto del predio ' + ${predio.codigo}">
+                        </div>
+                        <div class="card-footer bg-white" th:if="${puedeEditar}">
+                            <a class="btn btn-outline-dark btn-sm" th:href="@{/predios/{id}/editar(id=${predio.id})}">Editar predio</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+<th:block th:replace="~{fragments/mapa :: scripts}"></th:block>
+</body>
+</html>

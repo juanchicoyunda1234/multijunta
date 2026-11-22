@@ -4,6 +4,7 @@ import ec.uta.multijunta.config.MatrizPermisos;
 import ec.uta.multijunta.config.UsuarioAutenticado;
 import ec.uta.multijunta.service.ConfiguracionJuntaService;
 import ec.uta.multijunta.service.MenuService;
+import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.support.RequestContextUtils;
@@ -61,7 +62,12 @@ public class VistaComunAdvice {
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public String archivoMuyGrande(HttpServletRequest request) {
-        RequestContextUtils.getOutputFlashMap(request).put("error", "configuracion.logoInvalido");
-        return "redirect:/junta/configuracion";
+        Object original = request.getAttribute(RequestDispatcher.ERROR_REQUEST_URI);
+        String uri = original != null ? original.toString() : request.getRequestURI();
+        String ruta = uri.substring(request.getContextPath().length());
+        boolean esPredio = ruta.startsWith("/predios");
+        RequestContextUtils.getOutputFlashMap(request)
+                .put("error", esPredio ? "predio.fotoGrande" : "configuracion.logoInvalido");
+        return esPredio ? "redirect:/socios" : "redirect:/junta/configuracion";
     }
 }

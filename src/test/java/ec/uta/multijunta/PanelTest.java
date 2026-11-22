@@ -1,6 +1,10 @@
 package ec.uta.multijunta;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
+import ec.uta.multijunta.model.TipoEvento;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -94,5 +98,24 @@ class PanelTest {
         mvc.perform(get("/panel").with(fabrica.sesion(tesorero)))
                 .andExpect(content().string(containsString("Disponible próximamente")))
                 .andExpect(content().string(containsString("href=\"/cuotas\"")));
+    }
+
+    @Test
+    @DisplayName("FR-032 (003) próximos eventos y turnos a 7 días y asistencias pendientes de cerrar")
+    void tarjetasDelModuloAdministrativo() throws Exception {
+        LocalDate hoy = LocalDate.now();
+        Sector sector = fabrica.sector(junta);
+        ec.uta.multijunta.model.Recurso recurso = fabrica.recurso(junta, sector, "Compuerta Panel");
+        fabrica.evento(junta, TipoEvento.MINGA, hoy.plusDays(3));
+        fabrica.evento(junta, TipoEvento.ASAMBLEA, hoy.plusDays(10));
+        fabrica.evento(junta, TipoEvento.ASAMBLEA, hoy.minusDays(1));
+        fabrica.evento(junta, TipoEvento.REUNION, hoy.minusDays(1));
+        fabrica.turno(junta, sector, recurso, hoy.plusDays(2), LocalTime.of(8, 0), LocalTime.of(9, 0));
+        fabrica.turno(junta, sector, recurso, hoy.plusDays(9), LocalTime.of(8, 0), LocalTime.of(9, 0));
+        Junta otra = fabrica.junta("Junta Ajena Panel");
+        fabrica.evento(otra, TipoEvento.ASAMBLEA, hoy.minusDays(1));
+        Map<String, PanelService.Tarjeta> panel = tarjetas(fabrica.usuario(Rol.ADMIN_JUNTA, junta));
+        assertThat(panel.get("Próximos eventos y turnos").valor()).isEqualTo(2);
+        assertThat(panel.get("Asistencias pendientes de cerrar").valor()).isEqualTo(1);
     }
 }

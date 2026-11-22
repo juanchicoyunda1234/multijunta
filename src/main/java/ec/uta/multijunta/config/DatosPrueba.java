@@ -1,7 +1,20 @@
 package ec.uta.multijunta.config;
 
 import ec.uta.multijunta.model.EstadoSocio;
+import ec.uta.multijunta.model.Evento;
 import ec.uta.multijunta.model.Junta;
+import ec.uta.multijunta.model.Predio;
+import ec.uta.multijunta.model.Recurso;
+import ec.uta.multijunta.model.TipoEvento;
+import ec.uta.multijunta.model.TipoRecurso;
+import ec.uta.multijunta.model.Turno;
+import ec.uta.multijunta.repository.EventoRepository;
+import ec.uta.multijunta.repository.PredioRepository;
+import ec.uta.multijunta.repository.RecursoRepository;
+import ec.uta.multijunta.repository.TurnoRepository;
+import java.time.DayOfWeek;
+import java.time.LocalTime;
+import java.util.List;
 import ec.uta.multijunta.model.Rol;
 import ec.uta.multijunta.model.Sector;
 import ec.uta.multijunta.model.Socio;
@@ -28,18 +41,87 @@ public class DatosPrueba implements CommandLineRunner {
     private final UsuarioRepository usuarios;
     private final SocioService socioService;
     private final PasswordEncoder codificador;
+    private final RecursoRepository recursos;
+    private final EventoRepository eventos;
+    private final TurnoRepository turnos;
+    private final PredioRepository predios;
     private final boolean habilitado;
     private String claveCodificada;
 
     public DatosPrueba(JuntaRepository juntas, SectorRepository sectores, UsuarioRepository usuarios,
-            SocioService socioService, PasswordEncoder codificador,
+            SocioService socioService, PasswordEncoder codificador, RecursoRepository recursos,
+            EventoRepository eventos, TurnoRepository turnos, PredioRepository predios,
             @Value("${multijunta.datos-prueba:true}") boolean habilitado) {
         this.juntas = juntas;
         this.sectores = sectores;
         this.usuarios = usuarios;
         this.socioService = socioService;
         this.codificador = codificador;
+        this.recursos = recursos;
+        this.eventos = eventos;
+        this.turnos = turnos;
+        this.predios = predios;
         this.habilitado = habilitado;
+    }
+
+    private void administrativos(Junta junta, Sector sectorA, Sector sectorB, List<Socio> activos, String latitud,
+            String longitud) {
+        Recurso compuerta = recurso(junta, sectorA, "Compuerta #3", TipoRecurso.COMPUERTA, "30.00");
+        Recurso canal = recurso(junta, sectorB, "Canal principal", TipoRecurso.CANAL, "120.00");
+        LocalDate hoy = LocalDate.now();
+        evento(junta, TipoEvento.ASAMBLEA, hoy.minusDays(1), LocalTime.of(9, 0), "Casa comunal", "Asamblea ordinaria");
+        evento(junta, TipoEvento.MINGA, hoy.plusDays(5), LocalTime.of(7, 0), "Canal principal", "Limpieza del canal");
+        evento(junta, TipoEvento.REUNION, hoy.plusDays(2), LocalTime.of(18, 0), "Casa comunal", "Reunión de directiva");
+        LocalDate lunes = hoy.with(DayOfWeek.MONDAY);
+        turno(junta, sectorA, compuerta, lunes.plusDays(1), LocalTime.of(8, 0), LocalTime.of(10, 0));
+        turno(junta, sectorB, canal, lunes.plusDays(3), LocalTime.of(14, 0), LocalTime.of(16, 0));
+        int numero = 1;
+        for (Socio socio : activos) {
+            Predio predio = new Predio();
+            predio.setJunta(junta);
+            predio.setSocio(socio);
+            predio.setSector(socio.getSector());
+            predio.setCodigo(String.format("P-%04d", numero));
+            predio.setArea(new BigDecimal("1500.00").multiply(BigDecimal.valueOf(numero)));
+            predio.setLatitud(new BigDecimal(latitud).add(new BigDecimal("0.002").multiply(BigDecimal.valueOf(numero))));
+            predio.setLongitud(new BigDecimal(longitud));
+            predios.save(predio);
+            numero++;
+        }
+    }
+
+    private Recurso recurso(Junta junta, Sector sector, String nombre, TipoRecurso tipo, String caudal) {
+        Recurso recurso = new Recurso();
+        recurso.setJunta(junta);
+        recurso.setSector(sector);
+        recurso.setNombre(nombre);
+        recurso.setTipo(tipo);
+        recurso.setCaudal(new BigDecimal(caudal));
+        return recursos.save(recurso);
+    }
+
+    private void evento(Junta junta, TipoEvento tipo, LocalDate fecha, LocalTime hora, String lugar,
+            String descripcion) {
+        Evento evento = new Evento();
+        evento.setJunta(junta);
+        evento.setTipo(tipo);
+        evento.setFecha(fecha);
+        evento.setHora(hora);
+        evento.setLugar(lugar);
+        evento.setDescripcion(descripcion);
+        eventos.save(evento);
+    }
+
+    private void turno(Junta junta, Sector sector, Recurso recurso, LocalDate fecha, LocalTime inicio, LocalTime fin) {
+        Turno turno = new Turno();
+        turno.setJunta(junta);
+        turno.setSector(sector);
+        turno.setRecurso(recurso);
+        turno.setFecha(fecha);
+        turno.setHoraInicio(inicio);
+        turno.setHoraFin(fin);
+        turno.setResponsable("Juez de aguas");
+        turnos.save(turno);
     }
 
     @Override
@@ -65,9 +147,10 @@ public class DatosPrueba implements CommandLineRunner {
         Usuario desactivado = usuario("secretario.anterior", "1800000014", "Ramiro", "Sánchez", Rol.SECRETARIO, riego);
         desactivado.setActivo(false);
         usuarios.save(desactivado);
-        socio(riego, norte, "1800000101", "Rosa", "Masaquiza", "SP-001", true, false, EstadoSocio.ACTIVO);
-        socio(riego, sur, "1800000102", "Manuel", "Toaquiza", "SP-002", false, false, EstadoSocio.ACTIVO);
+        Socio rosa = socio(riego, norte, "1800000101", "Rosa", "Masaquiza", "SP-001", true, false, EstadoSocio.ACTIVO);
+        Socio manuel = socio(riego, sur, "1800000102", "Manuel", "Toaquiza", "SP-002", false, false, EstadoSocio.ACTIVO);
         socio(riego, norte, "1800000103", "Carmen", "Pilla", "SP-003", false, false, EstadoSocio.INACTIVO);
+        administrativos(riego, norte, sur, List.of(rosa, manuel), "-1.241700", "-78.619700");
 
         Junta rosario = junta("Junta Comunitaria El Rosario", TipoJunta.COMUNITARIA, "1890000002001", "San Pedro de Pelileo", true);
         Sector alto = sector(rosario, "Sector Alto");
@@ -75,9 +158,10 @@ public class DatosPrueba implements CommandLineRunner {
         usuario("admin.rosario", "1800000021", "Diana", "Guevara", Rol.ADMIN_JUNTA, rosario);
         usuario("secretario.rosario", "1800000022", "Pablo", "Freire", Rol.SECRETARIO, rosario);
         usuario("tesorera.rosario", "1800000023", "Lucía", "Medina", Rol.TESORERO, rosario);
-        socio(rosario, alto, "1800000201", "Segundo", "Caiza", "ER-001", true, true, EstadoSocio.ACTIVO);
-        socio(rosario, bajo, "1800000202", "Blanca", "Tisalema", "ER-002", false, false, EstadoSocio.ACTIVO);
+        Socio segundo = socio(rosario, alto, "1800000201", "Segundo", "Caiza", "ER-001", true, true, EstadoSocio.ACTIVO);
+        Socio blanca = socio(rosario, bajo, "1800000202", "Blanca", "Tisalema", "ER-002", false, false, EstadoSocio.ACTIVO);
         socio(rosario, alto, "1800000203", "Hugo", "Llerena", "ER-003", false, false, EstadoSocio.INACTIVO);
+        administrativos(rosario, alto, bajo, List.of(segundo, blanca), "-1.329600", "-78.543100");
 
         Junta santaRosa = junta("Junta Parroquial Santa Rosa", TipoJunta.PARROQUIAL, "1890000003001", "Ambato", false);
         usuario("admin.santarosa", "1800000031", "Fernando", "Ortiz", Rol.ADMIN_JUNTA, santaRosa);
@@ -116,7 +200,7 @@ public class DatosPrueba implements CommandLineRunner {
         return usuarios.save(usuario);
     }
 
-    private void socio(Junta junta, Sector sector, String cedula, String nombres, String apellidos, String codigo,
+    private Socio socio(Junta junta, Sector sector, String cedula, String nombres, String apellidos, String codigo,
             boolean conCuenta, boolean debeCambiar, EstadoSocio estado) {
         Socio socio = new Socio();
         completar(socio, cedula, cedula, nombres, apellidos, junta);
@@ -127,7 +211,7 @@ public class DatosPrueba implements CommandLineRunner {
         socio.setTieneCuenta(conCuenta);
         socio.setActivo(conCuenta);
         socio.setDebeCambiarPassword(debeCambiar);
-        socioService.registrar(socio);
+        return socioService.registrar(socio);
     }
 
     private void completar(Usuario usuario, String username, String cedula, String nombres, String apellidos,

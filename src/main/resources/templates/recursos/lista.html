@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Recursos de riego')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: barra}"></header>
+<div class="d-lg-flex">
+    <nav th:replace="~{fragments/layout :: menu}"></nav>
+    <main class="contenido flex-grow-1 p-3 p-md-4">
+        <h1 class="h4 mb-3">Calendario de Servicios</h1>
+        <ul class="nav nav-tabs mb-3">
+            <li class="nav-item"><a class="nav-link" th:href="@{/turnos}">Calendario</a></li>
+            <li class="nav-item"><a class="nav-link active" aria-current="page" th:href="@{/recursos}">Recursos</a></li>
+        </ul>
+        <div th:replace="~{fragments/layout :: mensajes}"></div>
+        <div class="d-flex justify-content-end mb-2" th:if="${puedeEditar}">
+            <button type="button" class="btn btn-verde" data-bs-toggle="modal" data-bs-target="#modalNuevo">Nuevo recurso</button>
+        </div>
+        <div th:if="${#lists.isEmpty(recursos)}" class="alert alert-light border">No hay recursos registrados.</div>
+        <div class="table-responsive" th:unless="${#lists.isEmpty(recursos)}">
+            <table class="table align-middle bg-white">
+                <thead>
+                <tr>
+                    <th scope="col">Nombre</th>
+                    <th scope="col">Tipo</th>
+                    <th scope="col">Sector</th>
+                    <th scope="col">Caudal (L/s)</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col" class="text-end" th:if="${puedeEditar}">Acciones</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="recurso : ${recursos}">
+                    <td th:text="${recurso.nombre}">Nombre</td>
+                    <td th:text="${recurso.tipo.etiqueta}">Tipo</td>
+                    <td th:text="${recurso.sector.nombre}">Sector</td>
+                    <td th:text="${recurso.caudal}">0</td>
+                    <td>
+                        <span th:if="${recurso.activo}" class="badge bg-success">Activo</span>
+                        <span th:unless="${recurso.activo}" class="badge bg-secondary">Inactivo</span>
+                    </td>
+                    <td class="text-end text-nowrap" th:if="${puedeEditar}">
+                        <button type="button" class="btn btn-outline-dark btn-sm boton-editar"
+                                th:data-id="${recurso.id}" th:data-nombre="${recurso.nombre}" th:data-tipo="${recurso.tipo}"
+                                th:data-sector="${recurso.sector.id}" th:data-caudal="${recurso.caudal}">Editar</button>
+                        <form method="post" class="d-inline" th:if="${recurso.activo}"
+                              th:action="@{/recursos/{id}/desactivar(id=${recurso.id})}">
+                            <button type="submit" class="btn btn-outline-danger btn-sm">Desactivar</button>
+                        </form>
+                        <form method="post" class="d-inline" th:unless="${recurso.activo}"
+                              th:action="@{/recursos/{id}/reactivar(id=${recurso.id})}">
+                            <button type="submit" class="btn btn-outline-dark btn-sm">Reactivar</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+
+<div class="modal fade" id="modalNuevo" tabindex="-1" aria-labelledby="tituloNuevo" aria-hidden="true">
+    <div class="modal-dialog">
+        <form class="modal-content" method="post" novalidate id="formularioNuevo" th:object="${recursoFormulario}" th:action="@{/recursos}">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="tituloNuevo">Nuevo recurso</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label" for="nuevoNombre">Nombre</label>
+                    <input type="text" class="form-control" id="nuevoNombre" th:field="*{nombre}" maxlength="80"
+                           placeholder="Ej: Compuerta #3" th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{nombre}"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="nuevoTipo">Tipo</label>
+                    <select class="form-select" id="nuevoTipo" th:field="*{tipo}" th:errorclass="is-invalid">
+                        <option value="">Seleccione</option>
+                        <option th:each="tipo : ${tipos}" th:value="${tipo}" th:text="${tipo.etiqueta}">Tipo</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{tipo}"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="nuevoSector">Sector</label>
+                    <select class="form-select" id="nuevoSector" th:field="*{sectorId}" th:errorclass="is-invalid">
+                        <option value="">Seleccione</option>
+                        <option th:each="sector : ${sectores}" th:value="${sector.id}" th:text="${sector.nombre}">Sector</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{sectorId}"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="nuevoCaudal">Caudal (L/s)</label>
+                    <input type="number" class="form-control" id="nuevoCaudal" step="0.01" min="0.01"
+                           th:field="*{caudal}" th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{caudal}"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-verde">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEdicion" tabindex="-1" aria-labelledby="tituloEdicion" aria-hidden="true">
+    <div class="modal-dialog">
+        <form class="modal-content" method="post" novalidate id="formularioEdicion" th:object="${edicionFormulario}" th:action="${edicionId != null} ? @{/recursos/{id}(id=${edicionId})} : @{/recursos/0}">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="tituloEdicion">Editar recurso</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label" for="edicionNombre">Nombre</label>
+                    <input type="text" class="form-control" id="edicionNombre" th:field="*{nombre}" maxlength="80"
+                           placeholder="Ej: Compuerta #3" th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{nombre}"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="edicionTipo">Tipo</label>
+                    <select class="form-select" id="edicionTipo" th:field="*{tipo}" th:errorclass="is-invalid">
+                        <option value="">Seleccione</option>
+                        <option th:each="tipo : ${tipos}" th:value="${tipo}" th:text="${tipo.etiqueta}">Tipo</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{tipo}"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="edicionSector">Sector</label>
+                    <select class="form-select" id="edicionSector" th:field="*{sectorId}" th:errorclass="is-invalid">
+                        <option value="">Seleccione</option>
+                        <option th:each="sector : ${sectores}" th:value="${sector.id}" th:text="${sector.nombre}">Sector</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{sectorId}"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="edicionCaudal">Caudal (L/s)</label>
+                    <input type="number" class="form-control" id="edicionCaudal" step="0.01" min="0.01"
+                           th:field="*{caudal}" th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{caudal}"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-verde">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+<script th:inline="javascript">
+    const abrir = [[${abrir}]];
+    document.querySelectorAll('.boton-editar').forEach(function (boton) {
+        boton.addEventListener('click', function () {
+            const formulario = document.getElementById('formularioEdicion');
+            formulario.action = formulario.action.replace(/\/recursos\/\d+$/, '/recursos/' + boton.dataset.id);
+            document.getElementById('edicionNombre').value = boton.dataset.nombre;
+            document.getElementById('edicionTipo').value = boton.dataset.tipo;
+            document.getElementById('edicionSector').value = boton.dataset.sector;
+            document.getElementById('edicionCaudal').value = boton.dataset.caudal;
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('modalEdicion')).show();
+        });
+    });
+    if (abrir === 'nuevo') {
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalNuevo')).show();
+    } else if (abrir === 'edicion') {
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalEdicion')).show();
+    }
+</script>
+</body>
+</html>

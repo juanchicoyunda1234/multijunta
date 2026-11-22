@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Registro de asistencia')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: barra}"></header>
+<div class="d-lg-flex">
+    <nav th:replace="~{fragments/layout :: menu}"></nav>
+    <main class="contenido flex-grow-1 p-3 p-md-4">
+        <h1 class="h4 mb-1">Registro de asistencia</h1>
+        <p class="text-muted" th:text="${evento.tipo.etiqueta} + ' · ' + ${#temporals.format(evento.fecha, 'dd/MM/yyyy')} + ' · ' + ${evento.lugar}">Evento</p>
+        <div th:replace="~{fragments/layout :: mensajes}"></div>
+        <div class="row row-cols-2 row-cols-md-4 g-2 mb-3" id="resumenAsistencia">
+            <div class="col"><div class="card text-center"><div class="card-body p-2">
+                <div class="fs-4 fw-bold text-verde" th:text="${resumen.porcentaje} + ' %'">0 %</div><div class="small">Asistencia</div></div></div></div>
+            <div class="col"><div class="card text-center"><div class="card-body p-2">
+                <div class="fs-4 fw-bold" th:text="${resumen.presentes}">0</div><div class="small">Presentes</div></div></div></div>
+            <div class="col"><div class="card text-center"><div class="card-body p-2">
+                <div class="fs-4 fw-bold" th:text="${resumen.ausentes}">0</div><div class="small">Ausentes</div></div></div></div>
+            <div class="col"><div class="card text-center"><div class="card-body p-2">
+                <div class="fs-4 fw-bold" th:text="${resumen.justificados}">0</div><div class="small">Justificados</div></div></div></div>
+        </div>
+        <div class="table-responsive">
+            <table class="table align-middle bg-white">
+                <thead>
+                <tr>
+                    <th scope="col">Socio</th>
+                    <th scope="col">Cédula</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col" class="text-end" th:if="${puedeSolicitar}">Corrección</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="asistencia : ${asistencias}">
+                    <td th:text="${asistencia.socio.nombreCompleto}">Socio</td>
+                    <td th:text="${asistencia.socio.cedula}">Cédula</td>
+                    <td th:text="${asistencia.estado.etiqueta}">Estado</td>
+                    <td class="text-end" th:if="${puedeSolicitar}">
+                        <button type="button" class="btn btn-outline-dark btn-sm boton-correccion"
+                                th:data-id="${asistencia.id}" th:data-socio="${asistencia.socio.nombreCompleto}"
+                                th:data-estado="${asistencia.estado}">Solicitar corrección</button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <h2 class="h5 mt-4">Historial de correcciones</h2>
+        <div th:if="${#lists.isEmpty(correcciones)}" class="alert alert-light border">Sin correcciones.</div>
+        <ul class="list-group" th:unless="${#lists.isEmpty(correcciones)}">
+            <li class="list-group-item" th:each="correccion : ${correcciones}">
+                <span class="fw-semibold" th:text="${correccion.asistencia.socio.nombreCompleto}">Socio</span>:
+                <span th:text="${correccion.estadoAnterior.etiqueta} + ' → ' + ${correccion.estadoNuevo.etiqueta}">Cambio</span>
+                <span class="badge bg-dark ms-1" th:text="${correccion.estado.etiqueta}">Estado</span>
+                <div class="small text-muted" th:text="'Motivo: ' + ${correccion.motivo}">Motivo</div>
+            </li>
+        </ul>
+        <a class="btn btn-outline-dark mt-3" th:href="@{/asistencia}">Volver</a>
+    </main>
+</div>
+
+<div class="modal fade" id="modalCorreccion" tabindex="-1" aria-labelledby="tituloCorreccion" aria-hidden="true" th:if="${puedeSolicitar}">
+    <div class="modal-dialog">
+        <form class="modal-content" method="post" th:action="@{/asistencia/correcciones}">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="tituloCorreccion">Solicitar corrección</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" name="asistenciaId" id="correccionAsistencia">
+                <input type="hidden" name="eventoId" th:value="${evento.id}">
+                <p>Socio: <strong id="correccionSocio"></strong></p>
+                <div class="mb-3">
+                    <label for="estadoNuevo" class="form-label">Nuevo estado</label>
+                    <select id="estadoNuevo" name="estadoNuevo" class="form-select">
+                        <option th:each="estado : ${estados}" th:value="${estado}" th:text="${estado.etiqueta}">Estado</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="motivo" class="form-label">Motivo</label>
+                    <textarea id="motivo" name="motivo" class="form-control" rows="3" maxlength="300" required></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-verde">Enviar solicitud</button>
+            </div>
+        </form>
+    </div>
+</div>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+<script>
+    document.querySelectorAll('.boton-correccion').forEach(function (boton) {
+        boton.addEventListener('click', function () {
+            document.getElementById('correccionAsistencia').value = boton.dataset.id;
+            document.getElementById('correccionSocio').textContent = boton.dataset.socio;
+            document.getElementById('estadoNuevo').value = boton.dataset.estado === 'JUSTIFICADO' ? 'PRESENTE' : 'JUSTIFICADO';
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('modalCorreccion')).show();
+        });
+    });
+</script>
+</body>
+</html>

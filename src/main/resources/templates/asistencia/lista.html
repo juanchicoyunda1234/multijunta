@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Asistencia')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: barra}"></header>
+<div class="d-lg-flex">
+    <nav th:replace="~{fragments/layout :: menu}"></nav>
+    <main class="contenido flex-grow-1 p-3 p-md-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <h1 class="h4 m-0">Asistencia a eventos</h1>
+            <a class="btn btn-outline-dark" th:href="@{/asistencia/correcciones}">Correcciones</a>
+        </div>
+        <div th:replace="~{fragments/layout :: mensajes}"></div>
+        <div th:if="${#lists.isEmpty(filas)}" class="alert alert-light border">No hay Asambleas ni Mingas registradas.</div>
+        <div class="table-responsive" th:unless="${#lists.isEmpty(filas)}">
+            <table class="table align-middle bg-white">
+                <thead>
+                <tr>
+                    <th scope="col">Evento</th>
+                    <th scope="col">Fecha</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col">Resumen</th>
+                    <th scope="col" class="text-end">Acción</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="fila : ${filas}" th:with="evento=${fila.evento}">
+                    <td th:text="${evento.tipo.etiqueta} + ' · ' + ${evento.lugar}">Evento</td>
+                    <td th:text="${#temporals.format(evento.fecha, 'dd/MM/yyyy')}">Fecha</td>
+                    <td>
+                        <span th:if="${evento.asistenciaCerrada}" class="badge bg-success">Cerrada</span>
+                        <span th:if="${!evento.asistenciaCerrada and evento.estado.name() == 'CANCELADO'}" class="badge bg-secondary">Cancelado</span>
+                        <span th:if="${!evento.asistenciaCerrada and evento.estado.name() == 'PROGRAMADO'}" class="badge text-bg-light border">Pendiente</span>
+                    </td>
+                    <td>
+                        <span th:if="${fila.resumen != null}"
+                              th:text="${fila.resumen.porcentaje} + ' % (' + ${fila.resumen.presentes} + ' de ' + ${fila.resumen.total} + ')'">80 %</span>
+                    </td>
+                    <td class="text-end">
+                        <a th:if="${fila.admiteToma and puedeTomar}" class="btn btn-verde btn-sm"
+                           th:href="@{/asistencia/eventos/{id}(id=${evento.id})}">Tomar Asistencia</a>
+                        <a th:if="${evento.asistenciaCerrada}" class="btn btn-outline-dark btn-sm"
+                           th:href="@{/asistencia/eventos/{id}(id=${evento.id})}">Ver registro</a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

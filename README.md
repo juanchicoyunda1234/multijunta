@@ -10,10 +10,19 @@ Especificaciones implementadas:
 - `specs/002-gestion-plataforma/`: listado, registro, edición y suspensión de juntas (Super
   Administrador); asignación de administradores; configuración de la junta con sectores y logo;
   módulo Usuarios (accesos de socios y cuentas de la directiva); panel de la directiva.
+- `specs/003-gestion-administrativa/`: nómina de socios, eventos, toma y cierre de asistencia
+  (con la interfaz `IAsistencia` para el módulo financiero), recursos de riego, calendario
+  semanal de turnos, predios con mapa (Leaflet + OpenStreetMap) y correcciones de asistencia con
+  aprobación del administrador.
 
 Las cuentas creadas desde la aplicación (administradores, directiva y socios) usan la **cédula
 como usuario** y una contraseña temporal que se muestra una sola vez y debe cambiarse en el
-primer ingreso. Los logos subidos se guardan en `./uploads/logos`.
+primer ingreso. Los logos y fotos de predios se guardan en `./uploads`. El mapa de predios
+necesita conexión a internet.
+
+Los datos de prueba incluyen, por cada junta activa, dos recursos, una Asamblea de ayer lista
+para tomar asistencia, una Minga y una Reunión próximas, dos turnos en la semana actual y un
+predio por socio activo.
 
 ## Requisitos
 

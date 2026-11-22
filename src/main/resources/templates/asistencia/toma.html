@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Tomar asistencia')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: barra}"></header>
+<div class="d-lg-flex">
+    <nav th:replace="~{fragments/layout :: menu}"></nav>
+    <main class="contenido flex-grow-1 p-3 p-md-4">
+        <h1 class="h4 mb-1">Registrar asistencia a eventos</h1>
+        <p class="text-muted" th:text="${evento.tipo.etiqueta} + ' · ' + ${#temporals.format(evento.fecha, 'dd/MM/yyyy')} + ' · ' + ${evento.lugar}">Evento</p>
+        <div th:replace="~{fragments/layout :: mensajes}"></div>
+        <form method="post" th:action="@{/asistencia/eventos/{id}/cerrar(id=${evento.id})}" id="formularioToma"
+              onsubmit="return confirm('¿Cerrar el registro? Después no se podrá modificar.');">
+            <input type="search" id="buscarSocio" class="form-control mb-2" placeholder="Buscar por cédula o nombre"
+                   aria-label="Buscar socio por cédula o nombre">
+            <div class="table-responsive">
+                <table class="table align-middle bg-white">
+                    <thead>
+                    <tr>
+                        <th scope="col">Socio / regante</th>
+                        <th scope="col">Estado de asistencia</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="socio : ${socios}" class="fila-socio"
+                        th:data-busqueda="${#strings.toLowerCase(socio.nombreCompleto + ' ' + socio.cedula)}">
+                        <td>
+                            <div class="fw-semibold" th:text="${socio.nombreCompleto}">Socio</div>
+                            <div class="small text-muted" th:text="'CI: ' + ${socio.cedula} + ' · ' + ${socio.sector.nombre}">CI</div>
+                        </td>
+                        <td>
+                            <div class="btn-group flex-wrap" role="group" th:attr="aria-label='Estado de ' + ${socio.nombreCompleto}">
+                                <th:block th:each="estado : ${estados}">
+                                    <input type="radio" class="btn-check" th:name="'estado[' + ${socio.id} + ']'"
+                                           th:id="'estado-' + ${socio.id} + '-' + ${estado}" th:value="${estado}"
+                                           th:checked="${estado.name() == 'AUSENTE'}" autocomplete="off">
+                                    <label class="btn btn-outline-dark btn-sm" th:for="'estado-' + ${socio.id} + '-' + ${estado}"
+                                           th:text="${estado.etiqueta}">Estado</label>
+                                </th:block>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="small text-muted" id="contador"></p>
+            <div class="d-flex justify-content-end gap-2">
+                <a class="btn btn-outline-dark" th:href="@{/asistencia}">Volver</a>
+                <button type="submit" class="btn btn-verde">Cerrar Registro de Asistencia</button>
+            </div>
+        </form>
+    </main>
+</div>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+<script>
+    const filas = Array.from(document.querySelectorAll('.fila-socio'));
+    const contador = document.getElementById('contador');
+
+    function contar() {
+        const marcados = Array.from(document.querySelectorAll('#formularioToma input[type=radio]:checked'));
+        const presentes = marcados.filter(function (radio) { return radio.value === 'PRESENTE'; }).length;
+        const justificados = marcados.filter(function (radio) { return radio.value === 'JUSTIFICADO'; }).length;
+        contador.textContent = presentes + ' presentes · ' + justificados + ' justificados · '
+            + (marcados.length - presentes - justificados) + ' ausentes';
+    }
+
+    document.getElementById('buscarSocio').addEventListener('input', function (evento) {
+        const texto = evento.target.value.trim().toLowerCase();
+        filas.forEach(function (fila) {
+            fila.classList.toggle('d-none', texto !== '' && !fila.dataset.busqueda.includes(texto));
+        });
+    });
+    document.getElementById('formularioToma').addEventListener('change', contar);
+    contar();
+</script>
+</body>
+</html>

@@ -11,8 +11,7 @@ public class EnConstruccionController {
         return "en-construccion";
     }
 
-    @GetMapping({"/socios", "/asistencia",
-            "/asistencia/correcciones", "/predios", "/turnos", "/eventos", "/recursos", "/pagos", "/multas",
+    @GetMapping({"/pagos", "/multas",
             "/egresos", "/reportes", "/inventario", "/activos", "/cuotas", "/convocatorias", "/actas",
             "/comunicaciones", "/anuncios", "/mensajes"})
     public String moduloPendiente() {

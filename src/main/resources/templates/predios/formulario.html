@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Predio')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: barra}"></header>
+<div class="d-lg-flex">
+    <nav th:replace="~{fragments/layout :: menu}"></nav>
+    <main class="contenido flex-grow-1 p-3 p-md-4">
+        <h1 class="h4 mb-1" th:text="${predio == null} ? 'Asignar predio' : 'Editar predio ' + ${predio.codigo}">Predio</h1>
+        <p class="text-muted" th:text="'Socio: ' + ${socio.nombreCompleto} + ' (' + ${socio.cedula} + ')'">Socio</p>
+        <form method="post" enctype="multipart/form-data" th:object="${predioFormulario}" novalidate
+              th:action="${predio == null} ? @{/predios(socioId=${socio.id})} : @{/predios/{id}(id=${predio.id})}">
+            <div class="alert alert-danger" role="alert" th:if="${#fields.hasGlobalErrors()}"
+                 th:each="error : ${#fields.globalErrors()}" th:text="${error}"></div>
+            <div class="row g-3">
+                <div class="col-lg-7">
+                    <div id="mapaPredio" class="mapa" role="application" aria-label="Mapa para ubicar el predio"></div>
+                    <div class="small text-muted mt-1" id="textoUbicacion">Haga clic en el mapa para colocar el pin.</div>
+                    <div class="text-danger small" th:if="${#fields.hasErrors('latitud')}" th:errors="*{latitud}"></div>
+                    <input type="hidden" id="latitud" th:field="*{latitud}">
+                    <input type="hidden" id="longitud" th:field="*{longitud}">
+                </div>
+                <div class="col-lg-5">
+                    <div class="mb-3">
+                        <label for="area" class="form-label">Área (m²)</label>
+                        <input type="number" id="area" class="form-control" step="0.01" min="0.01"
+                               th:field="*{area}" placeholder="Ej: 2450.00" th:errorclass="is-invalid">
+                        <div class="invalid-feedback" th:errors="*{area}"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="sectorId" class="form-label">Sector</label>
+                        <select id="sectorId" class="form-select" th:field="*{sectorId}" th:errorclass="is-invalid">
+                            <option value="">Seleccionar sector...</option>
+                            <option th:each="sector : ${sectores}" th:value="${sector.id}" th:text="${sector.nombre}">Sector</option>
+                        </select>
+                        <div class="invalid-feedback" th:errors="*{sectorId}"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="ubicacion" class="form-label">Referencia (opcional)</label>
+                        <input type="text" id="ubicacion" class="form-control" th:field="*{ubicacion}" maxlength="200">
+                    </div>
+                    <div class="mb-3">
+                        <label for="foto" class="form-label">Fotografía del terreno (JPG o PNG, hasta 5 MB)</label>
+                        <input type="file" id="foto" name="foto" class="form-control" accept="image/png,image/jpeg"
+                               th:classappend="${#fields.hasErrors('foto')} ? 'is-invalid'">
+                        <div class="invalid-feedback" th:errors="*{foto}"></div>
+                        <img th:if="${predio != null and predio.fotoNombre != null}" class="foto-predio mt-2"
+                             th:src="@{/predios/{id}/foto(id=${predio.id})}" alt="Foto actual del predio">
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex justify-content-end gap-2 mt-3">
+                <a class="btn btn-outline-dark" th:href="@{/socios/{id}(id=${socio.id})}">Cancelar</a>
+                <button type="submit" class="btn btn-verde">Guardar Predio</button>
+            </div>
+        </form>
+    </main>
+</div>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+<th:block th:replace="~{fragments/mapa :: scripts}"></th:block>
+<script>
+    const campoLatitud = document.getElementById('latitud');
+    const campoLongitud = document.getElementById('longitud');
+    const textoUbicacion = document.getElementById('textoUbicacion');
+    const mapaPredio = crearMapa('mapaPredio');
+    let marcador = null;
+
+    function colocar(lat, lng) {
+        if (!mapaPredio) {
+            return;
+        }
+        if (marcador) {
+            marcador.setLatLng([lat, lng]);
+        } else {
+            marcador = L.marker([lat, lng]).addTo(mapaPredio);
+        }
+        campoLatitud.value = lat.toFixed(6);
+        campoLongitud.value = lng.toFixed(6);
+        textoUbicacion.textContent = 'Pin: lat ' + lat.toFixed(6) + ' / lng ' + lng.toFixed(6);
+    }
+
+    if (mapaPredio) {
+        mapaPredio.on('click', function (evento) {
+            colocar(evento.latlng.lat, evento.latlng.lng);
+        });
+        if (campoLatitud.value && campoLongitud.value) {
+            const lat = parseFloat(campoLatitud.value);
+            const lng = parseFloat(campoLongitud.value);
+            mapaPredio.setView([lat, lng], 15);
+            colocar(lat, lng);
+        }
+    } else {
+        textoUbicacion.textContent = 'No se pudo cargar el mapa. Revise su conexión a internet.';
+    }
+</script>
+</body>
+</html>

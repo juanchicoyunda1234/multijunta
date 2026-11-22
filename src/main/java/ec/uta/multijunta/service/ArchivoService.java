@@ -19,38 +19,48 @@ import org.springframework.web.multipart.MultipartFile;
 public class ArchivoService {
 
     public static final long TAMANO_MAXIMO = 5L * 1024 * 1024;
+    public static final String LOGOS = "logos";
+    public static final String PREDIOS = "predios";
 
     private static final byte[] FIRMA_PNG = {(byte) 0x89, 0x50, 0x4E, 0x47};
     private static final byte[] FIRMA_JPG = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF};
-    private static final Pattern NOMBRE_VALIDO = Pattern.compile("junta-\\d+-[0-9a-f\\-]{36}\\.(png|jpg)");
+    private static final Pattern NOMBRE_VALIDO = Pattern.compile("[a-z]+-\\d+-[0-9a-f\\-]{36}\\.(png|jpg)");
 
-    private final Path carpetaLogos;
+    private final Path raiz;
 
     public ArchivoService(@Value("${multijunta.uploads:./uploads}") String carpeta) {
-        this.carpetaLogos = Paths.get(carpeta, "logos").toAbsolutePath().normalize();
+        this.raiz = Paths.get(carpeta).toAbsolutePath().normalize();
     }
 
-    public String extensionDeLogo(MultipartFile archivo) {
-        if (archivo == null || archivo.isEmpty() || archivo.getSize() > TAMANO_MAXIMO) {
-            throw new ReglaNegocioException("configuracion.logoInvalido", "logo");
+    public String validarImagen(MultipartFile archivo, String claveTamano, String claveTipo, String campo) {
+        if (archivo == null || archivo.isEmpty()) {
+            throw new ReglaNegocioException(claveTipo, campo);
         }
-        byte[] cabecera = leerCabecera(archivo);
+        if (archivo.getSize() > TAMANO_MAXIMO) {
+            throw new ReglaNegocioException(claveTamano, campo);
+        }
+        byte[] cabecera = leerCabecera(archivo, claveTipo, campo);
         if (empiezaCon(cabecera, FIRMA_PNG)) {
             return "png";
         }
         if (empiezaCon(cabecera, FIRMA_JPG)) {
             return "jpg";
         }
-        throw new ReglaNegocioException("configuracion.logoInvalido", "logo");
+        throw new ReglaNegocioException(claveTipo, campo);
     }
 
-    public String guardarLogo(Long juntaId, MultipartFile archivo, String extension, String anterior) {
-        String nombre = "junta-" + juntaId + "-" + UUID.randomUUID() + "." + extension;
+    public String extensionDeLogo(MultipartFile archivo) {
+        return validarImagen(archivo, "configuracion.logoInvalido", "configuracion.logoInvalido", "logo");
+    }
+
+    public String guardar(String subcarpeta, String prefijo, MultipartFile archivo, String extension, String anterior) {
+        Path carpeta = carpeta(subcarpeta);
+        String nombre = prefijo + "-" + UUID.randomUUID() + "." + extension;
         try (InputStream entrada = archivo.getInputStream()) {
-            Files.createDirectories(carpetaLogos);
-            Files.copy(entrada, carpetaLogos.resolve(nombre), StandardCopyOption.REPLACE_EXISTING);
+            Files.createDirectories(carpeta);
+            Files.copy(entrada, carpeta.resolve(nombre), StandardCopyOption.REPLACE_EXISTING);
             if (anterior != null && NOMBRE_VALIDO.matcher(anterior).matches()) {
-                Files.deleteIfExists(carpetaLogos.resolve(anterior));
+                Files.deleteIfExists(carpeta.resolve(anterior));
             }
         } catch (IOException excepcion) {
             throw new UncheckedIOException(excepcion);
@@ -58,19 +68,32 @@ public class ArchivoService {
         return nombre;
     }
 
-    public Optional<Path> logo(String nombre) {
+    public Optional<Path> leer(String subcarpeta, String nombre) {
         if (nombre == null || !NOMBRE_VALIDO.matcher(nombre).matches()) {
             return Optional.empty();
         }
-        Path ruta = carpetaLogos.resolve(nombre).normalize();
-        return ruta.startsWith(carpetaLogos) && Files.isRegularFile(ruta) ? Optional.of(ruta) : Optional.empty();
+        Path carpeta = carpeta(subcarpeta);
+        Path ruta = carpeta.resolve(nombre).normalize();
+        return ruta.startsWith(carpeta) && Files.isRegularFile(ruta) ? Optional.of(ruta) : Optional.empty();
     }
 
-    private byte[] leerCabecera(MultipartFile archivo) {
+    public String guardarLogo(Long juntaId, MultipartFile archivo, String extension, String anterior) {
+        return guardar(LOGOS, "junta-" + juntaId, archivo, extension, anterior);
+    }
+
+    public Optional<Path> logo(String nombre) {
+        return leer(LOGOS, nombre);
+    }
+
+    private Path carpeta(String subcarpeta) {
+        return raiz.resolve(subcarpeta).normalize();
+    }
+
+    private byte[] leerCabecera(MultipartFile archivo, String claveTipo, String campo) {
         try (InputStream entrada = archivo.getInputStream()) {
             return entrada.readNBytes(4);
         } catch (IOException excepcion) {
-            throw new ReglaNegocioException("configuracion.logoInvalido", "logo");
+            throw new ReglaNegocioException(claveTipo, campo);
         }
     }
 

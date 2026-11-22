@@ -12,6 +12,12 @@ import ec.uta.multijunta.repository.JuntaRepository;
 import ec.uta.multijunta.repository.SectorRepository;
 import ec.uta.multijunta.repository.SocioRepository;
 import ec.uta.multijunta.repository.UsuarioRepository;
+import ec.uta.multijunta.repository.EventoRepository;
+import ec.uta.multijunta.repository.PredioRepository;
+import ec.uta.multijunta.repository.RecursoRepository;
+import ec.uta.multijunta.repository.TurnoRepository;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -45,6 +51,18 @@ class DatosPruebaTest {
     @Autowired
     private PasswordEncoder codificador;
 
+    @Autowired
+    private RecursoRepository recursos;
+
+    @Autowired
+    private EventoRepository eventos;
+
+    @Autowired
+    private TurnoRepository turnos;
+
+    @Autowired
+    private PredioRepository predios;
+
     @Test
     @DisplayName("HU6-1, HU6-2 y HU6-4 carga juntas, roles, sectores y socios sin duplicar")
     void cargaCompletaSinDuplicados() {
@@ -69,6 +87,13 @@ class DatosPruebaTest {
             assertThat(sociosJunta).anyMatch(Socio::isTieneCuenta);
             assertThat(sociosJunta).anyMatch(socio -> socio.getEstado() == EstadoSocio.INACTIVO);
             assertThat(sociosJunta).allMatch(socio -> socio.getSector().getJunta().getId().equals(junta.getId()));
+            assertThat(recursos.findByJuntaIdOrderByNombreAsc(junta.getId())).hasSize(2);
+            assertThat(eventos.findByJuntaIdAndFechaBetweenOrderByFechaAscHoraAsc(junta.getId(),
+                    LocalDate.now().minusDays(1), LocalDate.now().plusDays(5))).hasSize(3)
+                    .anyMatch(evento -> evento.admiteToma(LocalDate.now()));
+            assertThat(turnos.countByJuntaIdAndFechaBetween(junta.getId(), LocalDate.now().with(DayOfWeek.MONDAY),
+                    LocalDate.now().with(DayOfWeek.FRIDAY))).isEqualTo(2);
+            assertThat(predios.countByJuntaId(junta.getId())).isEqualTo(2);
         }
 
         Junta suspendida = juntas.findAll().stream().filter(junta -> !junta.isActiva()).findFirst().orElseThrow();

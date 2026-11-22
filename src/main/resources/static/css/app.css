@@ -106,3 +106,61 @@ body {
         background-color: #FFFFFF;
     }
 }
+
+.calendario-semana {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+
+@media (max-width: 767.98px) {
+    .calendario-semana {
+        grid-template-columns: 1fr;
+    }
+}
+
+.dia-semana {
+    background-color: #FFFFFF;
+    border: 1px solid #DEE2E6;
+    border-radius: 0.375rem;
+    min-height: 10rem;
+    padding: 0.5rem;
+}
+
+.dia-hoy {
+    border-color: var(--verde);
+    background-color: #F0FDF4;
+}
+
+.bloque-turno {
+    border-left: 4px solid var(--verde);
+    background-color: #F8F9FA;
+    border-radius: 0.25rem;
+    padding: 0.35rem 0.5rem;
+    margin-bottom: 0.4rem;
+    font-size: 0.85rem;
+}
+
+.mapa {
+    height: 320px;
+    width: 100%;
+    border: 1px solid #DEE2E6;
+    border-radius: 0.375rem;
+}
+
+.mapa-mini {
+    height: 160px;
+    width: 100%;
+    border-radius: 0.375rem;
+}
+
+.foto-predio {
+    max-height: 160px;
+    width: 100%;
+    object-fit: cover;
+    border-radius: 0.375rem;
+}
+
+.tarjeta-evento-cancelada {
+    opacity: 0.6;
+}

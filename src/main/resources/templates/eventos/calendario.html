@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Calendario de Actividades')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: barra}"></header>
+<div class="d-lg-flex">
+    <nav th:replace="~{fragments/layout :: menu}"></nav>
+    <main class="contenido flex-grow-1 p-3 p-md-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <h1 class="h4 m-0">Calendario de Actividades</h1>
+            <button th:if="${puedeEditar}" type="button" class="btn btn-verde" data-bs-toggle="modal"
+                    data-bs-target="#modalNuevo">Nuevo Evento</button>
+        </div>
+        <div th:replace="~{fragments/layout :: mensajes}"></div>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <a class="btn btn-outline-dark btn-sm" th:href="@{/eventos(mes=${mesAnterior})}" aria-label="Mes anterior">&laquo;</a>
+            <span class="fw-semibold" th:text="${mesTexto}">Mes</span>
+            <a class="btn btn-outline-dark btn-sm" th:href="@{/eventos(mes=${mesSiguiente})}" aria-label="Mes siguiente">&raquo;</a>
+        </div>
+        <div th:if="${#lists.isEmpty(eventos)}" class="alert alert-light border">No hay eventos en este mes.</div>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">
+            <div class="col" th:each="evento : ${eventos}">
+                <div class="card h-100 shadow-sm" th:classappend="${evento.estado.name() == 'CANCELADO'} ? 'tarjeta-evento-cancelada'">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <span class="badge bg-dark" th:text="${evento.tipo.etiqueta}">Tipo</span>
+                            <span th:if="${evento.estado.name() == 'CANCELADO'}" class="badge bg-secondary">Cancelado</span>
+                            <span th:if="${evento.asistenciaCerrada}" class="badge bg-success">Asistencia cerrada</span>
+                        </div>
+                        <div class="fw-semibold mt-2"
+                             th:text="${#temporals.format(evento.fecha, 'dd/MM/yyyy')} + ' · ' + ${#temporals.format(evento.hora, 'HH:mm')}">Fecha</div>
+                        <div th:text="${evento.lugar}">Lugar</div>
+                        <div class="small text-muted" th:if="${evento.descripcion != null}" th:text="${evento.descripcion}">Descripción</div>
+                    </div>
+                    <div class="card-footer bg-white d-flex flex-wrap gap-2">
+                        <a th:if="${tomables[evento.id] and puedeEditar}" class="btn btn-verde btn-sm"
+                           th:href="@{/asistencia/eventos/{id}(id=${evento.id})}">Tomar Asistencia</a>
+                        <a th:if="${evento.asistenciaCerrada}" class="btn btn-outline-dark btn-sm"
+                           th:href="@{/asistencia/eventos/{id}(id=${evento.id})}">Ver asistencia</a>
+                        <th:block th:if="${puedeEditar and !evento.asistenciaCerrada}">
+                            <button type="button" class="btn btn-outline-dark btn-sm boton-editar"
+                                    th:data-id="${evento.id}" th:data-tipo="${evento.tipo}" th:data-fecha="${evento.fecha}"
+                                    th:data-hora="${#temporals.format(evento.hora, 'HH:mm')}" th:data-lugar="${evento.lugar}"
+                                    th:data-descripcion="${evento.descripcion}">Editar</button>
+                            <form th:if="${evento.estado.name() == 'PROGRAMADO'}" method="post" class="d-inline"
+                                  th:action="@{/eventos/{id}/cancelar(id=${evento.id})}"
+                                  onsubmit="return confirm('¿Cancelar este evento?');">
+                                <button type="submit" class="btn btn-outline-danger btn-sm">Cancelar</button>
+                            </form>
+                        </th:block>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<div class="modal fade" id="modalNuevo" tabindex="-1" aria-labelledby="tituloNuevo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <form class="modal-content" method="post" th:action="@{/eventos}" th:object="${eventoFormulario}" novalidate>
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="tituloNuevo">Nuevo Evento</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="nuevoTipo" class="form-label">Tipo</label>
+                    <select id="nuevoTipo" class="form-select" th:field="*{tipo}" th:errorclass="is-invalid">
+                        <option value="">Seleccione</option>
+                        <option th:each="tipo : ${tipos}" th:value="${tipo}" th:text="${tipo.etiqueta}">Tipo</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{tipo}"></div>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col">
+                        <label for="nuevoFecha" class="form-label">Fecha</label>
+                        <input type="date" id="nuevoFecha" class="form-control" th:field="*{fecha}" th:errorclass="is-invalid">
+                        <div class="invalid-feedback" th:errors="*{fecha}"></div>
+                    </div>
+                    <div class="col">
+                        <label for="nuevoHora" class="form-label">Hora</label>
+                        <input type="time" id="nuevoHora" class="form-control" th:field="*{hora}" th:errorclass="is-invalid">
+                        <div class="invalid-feedback" th:errors="*{hora}"></div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="nuevoLugar" class="form-label">Lugar</label>
+                    <input type="text" id="nuevoLugar" class="form-control" th:field="*{lugar}" maxlength="150" th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{lugar}"></div>
+                </div>
+                <div class="mb-3">
+                    <label for="nuevoDescripcion" class="form-label">Descripción (opcional)</label>
+                    <textarea id="nuevoDescripcion" class="form-control" th:field="*{descripcion}" maxlength="500" rows="2"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Cerrar</button>
+                <button type="submit" class="btn btn-verde">Guardar evento</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEdicion" tabindex="-1" aria-labelledby="tituloEdicion" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <form id="formularioEdicion" class="modal-content" method="post" th:object="${edicionFormulario}" novalidate
+              th:action="${edicionId != null} ? @{/eventos/{id}(id=${edicionId})} : @{/eventos/0}">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="tituloEdicion">Editar evento</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="edicionTipo" class="form-label">Tipo</label>
+                    <select id="edicionTipo" class="form-select" th:field="*{tipo}" th:errorclass="is-invalid">
+                        <option th:each="tipo : ${tipos}" th:value="${tipo}" th:text="${tipo.etiqueta}">Tipo</option>
+                    </select>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col">
+                        <label for="edicionFecha" class="form-label">Fecha</label>
+                        <input type="date" id="edicionFecha" class="form-control" th:field="*{fecha}" th:errorclass="is-invalid">
+                        <div class="invalid-feedback" th:errors="*{fecha}"></div>
+                    </div>
+                    <div class="col">
+                        <label for="edicionHora" class="form-label">Hora</label>
+                        <input type="time" id="edicionHora" class="form-control" th:field="*{hora}" th:errorclass="is-invalid">
+                        <div class="invalid-feedback" th:errors="*{hora}"></div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="edicionLugar" class="form-label">Lugar</label>
+                    <input type="text" id="edicionLugar" class="form-control" th:field="*{lugar}" maxlength="150" th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{lugar}"></div>
+                </div>
+                <div class="mb-3">
+                    <label for="edicionDescripcion" class="form-label">Descripción (opcional)</label>
+                    <textarea id="edicionDescripcion" class="form-control" th:field="*{descripcion}" maxlength="500" rows="2"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Cerrar</button>
+                <button type="submit" class="btn btn-verde">Guardar cambios</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+<script th:inline="javascript">
+    const abrir = [[${abrir}]];
+    document.querySelectorAll('.boton-editar').forEach(function (boton) {
+        boton.addEventListener('click', function () {
+            const formulario = document.getElementById('formularioEdicion');
+            formulario.action = formulario.action.replace(/\/eventos\/\d+$/, '/eventos/' + boton.dataset.id);
+            document.getElementById('edicionTipo').value = boton.dataset.tipo;
+            document.getElementById('edicionFecha').value = boton.dataset.fecha;
+            document.getElementById('edicionHora').value = boton.dataset.hora;
+            document.getElementById('edicionLugar').value = boton.dataset.lugar;
+            document.getElementById('edicionDescripcion').value = boton.dataset.descripcion || '';
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('modalEdicion')).show();
+        });
+    });
+    if (abrir === 'nuevo') {
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalNuevo')).show();
+    } else if (abrir === 'edicion') {
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalEdicion')).show();
+    }
+</script>
+</body>
+</html>

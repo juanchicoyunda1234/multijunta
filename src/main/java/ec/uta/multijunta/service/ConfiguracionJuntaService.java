@@ -6,7 +6,10 @@ import java.nio.file.Path;
 import ec.uta.multijunta.model.Sector;
 import ec.uta.multijunta.repository.JuntaRepository;
 import ec.uta.multijunta.repository.SectorRepository;
+import ec.uta.multijunta.repository.PredioRepository;
+import ec.uta.multijunta.repository.RecursoRepository;
 import ec.uta.multijunta.repository.SocioRepository;
+import ec.uta.multijunta.repository.TurnoRepository;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -24,14 +27,21 @@ public class ConfiguracionJuntaService {
     private final JuntaRepository juntas;
     private final SectorRepository sectores;
     private final SocioRepository socios;
+    private final PredioRepository predios;
+    private final RecursoRepository recursos;
+    private final TurnoRepository turnos;
     private final ArchivoService archivos;
     private final UsuarioActual usuarioActual;
 
     public ConfiguracionJuntaService(JuntaRepository juntas, SectorRepository sectores, SocioRepository socios,
-            ArchivoService archivos, UsuarioActual usuarioActual) {
+            PredioRepository predios, RecursoRepository recursos, TurnoRepository turnos, ArchivoService archivos,
+            UsuarioActual usuarioActual) {
         this.juntas = juntas;
         this.sectores = sectores;
         this.socios = socios;
+        this.predios = predios;
+        this.recursos = recursos;
+        this.turnos = turnos;
         this.archivos = archivos;
         this.usuarioActual = usuarioActual;
     }
@@ -102,8 +112,10 @@ public class ConfiguracionJuntaService {
         for (Long id : ids == null ? List.<Long>of() : ids) {
             Sector sector = sectores.findByIdAndJuntaId(id, usuarioActual.juntaId())
                     .orElseThrow(RecursoNoEncontradoException::new);
-            if (socios.existsBySectorId(sector.getId())) {
-                throw new ReglaNegocioException("sector.conSocios", "sectores");
+            Long sectorId = sector.getId();
+            if (socios.existsBySectorId(sectorId) || predios.existsBySectorId(sectorId)
+                    || recursos.existsBySectorId(sectorId) || turnos.existsBySectorId(sectorId)) {
+                throw new ReglaNegocioException("sector.enUso", "sectores");
             }
             resultado.add(sector);
         }
