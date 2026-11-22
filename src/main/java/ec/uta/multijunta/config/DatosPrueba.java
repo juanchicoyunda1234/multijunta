@@ -69,7 +69,7 @@ public class DatosPrueba implements CommandLineRunner {
         socio(riego, sur, "1800000102", "Manuel", "Toaquiza", "SP-002", false, false, EstadoSocio.ACTIVO);
         socio(riego, norte, "1800000103", "Carmen", "Pilla", "SP-003", false, false, EstadoSocio.INACTIVO);
 
-        Junta rosario = junta("Junta Comunitaria El Rosario", TipoJunta.COMUNITARIA, "1890000002001", "Pelileo", true);
+        Junta rosario = junta("Junta Comunitaria El Rosario", TipoJunta.COMUNITARIA, "1890000002001", "San Pedro de Pelileo", true);
         Sector alto = sector(rosario, "Sector Alto");
         Sector bajo = sector(rosario, "Sector Bajo");
         usuario("admin.rosario", "1800000021", "Diana", "Guevara", Rol.ADMIN_JUNTA, rosario);

@@ -41,7 +41,7 @@ public final class MatrizPermisos {
     private static final Set<Rol> TODOS = EnumSet.allOf(Rol.class);
 
     private static final List<Entrada> ENTRADAS = List.of(
-            new Entrada("CU20", "Inicio", "bi-house", "/plataforma", true, Set.of(SUPER_ADMIN), NINGUNO),
+            new Entrada("CU20", null, null, "/plataforma", true, Set.of(SUPER_ADMIN), NINGUNO),
             new Entrada("CU01, CU02, CU24", "Juntas", "bi-buildings", "/plataforma/juntas", false,
                     Set.of(SUPER_ADMIN), NINGUNO),
             new Entrada("CU03", "Configuración de Junta", "bi-gear", "/junta/configuracion", false,
@@ -108,6 +108,10 @@ public final class MatrizPermisos {
         return ENTRADAS.stream()
                 .sorted(Comparator.comparingInt((Entrada e) -> e.ruta().length()).reversed())
                 .toList();
+    }
+
+    public static boolean puedeVer(Rol rol, String ruta) {
+        return ENTRADAS.stream().anyMatch(entrada -> entrada.ruta().equals(ruta) && entrada.visiblePara(rol));
     }
 
     public static List<Entrada> menuPara(Rol rol) {

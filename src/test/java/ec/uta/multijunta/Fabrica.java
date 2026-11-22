@@ -1,6 +1,7 @@
 package ec.uta.multijunta;
 
 import ec.uta.multijunta.config.UsuarioAutenticado;
+import ec.uta.multijunta.model.EstadoSocio;
 import ec.uta.multijunta.model.Junta;
 import ec.uta.multijunta.model.Rol;
 import ec.uta.multijunta.model.Sector;
@@ -75,6 +76,24 @@ public class Fabrica {
         socio.setFechaIngreso(LocalDate.of(2021, 3, 1));
         socio.setTieneCuenta(true);
         return usuarios.save(socio);
+    }
+
+    public Junta juntaConCatalogo(String nombre) {
+        return junta(nombre);
+    }
+
+    public Socio socioSinCuenta(Junta junta, Sector sector, EstadoSocio estado) {
+        Socio socio = socio(junta, sector);
+        socio.setTieneCuenta(false);
+        socio.setActivo(false);
+        socio.setEstado(estado);
+        return usuarios.save(socio);
+    }
+
+    public Usuario directiva(Rol rol, Junta junta, String email) {
+        Usuario usuario = usuario(rol, junta);
+        usuario.setEmail(email);
+        return usuarios.save(usuario);
     }
 
     public Usuario superAdmin() {

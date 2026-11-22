@@ -44,7 +44,7 @@ public class UsuarioActual {
 
     public String rutaInicio() {
         return switch (rol()) {
-            case SUPER_ADMIN -> "/plataforma";
+            case SUPER_ADMIN -> "/plataforma/juntas";
             case SOCIO -> "/mi-informacion";
             default -> "/panel";
         };

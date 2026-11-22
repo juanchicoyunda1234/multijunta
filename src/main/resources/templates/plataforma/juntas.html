@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Juntas')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: barra}"></header>
+<div class="d-lg-flex">
+    <nav th:replace="~{fragments/layout :: menu}"></nav>
+    <main class="contenido flex-grow-1 p-3 p-md-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <h1 class="h4 m-0">Listado de juntas</h1>
+            <button type="button" class="btn btn-verde" data-bs-toggle="modal" data-bs-target="#modalRegistro">+ Nueva Organización</button>
+        </div>
+        <div th:replace="~{fragments/layout :: mensajes}"></div>
+        <div th:if="${credencial != null}" class="alert alert-success" role="alert" id="resumenCredencial">
+            <p class="mb-2" th:text="#{admin.creado}">Cuenta creada</p>
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Junta</dt>
+                <dd class="col-sm-9" th:text="${credencialJunta}">Junta</dd>
+                <dt class="col-sm-3">Nombre</dt>
+                <dd class="col-sm-9" th:text="${credencial.nombreCompleto}">Nombre</dd>
+                <dt class="col-sm-3">Usuario</dt>
+                <dd class="col-sm-9" th:text="${credencial.username}">Usuario</dd>
+                <dt class="col-sm-3">Contraseña temporal</dt>
+                <dd class="col-sm-9 temporal" th:text="${credencial.passwordTemporal}">Clave</dd>
+            </dl>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle bg-white">
+                <thead>
+                <tr>
+                    <th scope="col">Nombre de la junta</th>
+                    <th scope="col">RUC</th>
+                    <th scope="col">Tipo</th>
+                    <th scope="col">Provincia</th>
+                    <th scope="col">Cantón</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col">Administradores</th>
+                    <th scope="col" class="text-end">Acciones</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="fila : ${filas}" th:with="junta=${fila.junta}">
+                    <td th:text="${junta.nombre}">Junta</td>
+                    <td th:text="${junta.ruc}">RUC</td>
+                    <td th:text="${junta.tipo}">Tipo</td>
+                    <td th:text="${junta.provincia}">Provincia</td>
+                    <td th:text="${junta.canton}">Cantón</td>
+                    <td>
+                        <span th:if="${junta.activa}" class="badge bg-success">Activa</span>
+                        <span th:unless="${junta.activa}" class="badge bg-dark">Suspendida</span>
+                        <div th:unless="${junta.activa}" class="small text-muted" th:text="${junta.motivoSuspension}">Motivo</div>
+                    </td>
+                    <td th:text="${#lists.size(fila.administradores)}">0</td>
+                    <td class="text-end text-nowrap">
+                        <button type="button" class="btn btn-outline-dark btn-sm boton-editar" title="Editar junta"
+                                aria-label="Editar junta"
+                                th:data-id="${junta.id}" th:data-nombre="${junta.nombre}" th:data-ruc="${junta.ruc}"
+                                th:data-tipo="${junta.tipo}" th:data-provincia="${junta.provincia}"
+                                th:data-canton="${junta.canton}">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-dark btn-sm boton-administrador"
+                                title="Asignar Administrador" aria-label="Asignar Administrador"
+                                th:data-id="${junta.id}" th:data-nombre="${junta.nombre}" th:data-ruc="${junta.ruc}">
+                            <i class="bi bi-key"></i>
+                        </button>
+                        <button th:if="${junta.activa}" type="button" class="btn btn-outline-danger btn-sm boton-suspender"
+                                th:data-id="${junta.id}" th:data-nombre="${junta.nombre}">Suspender</button>
+                        <form th:unless="${junta.activa}" class="d-inline" method="post"
+                              th:action="@{/plataforma/juntas/{id}/reactivar(id=${junta.id})}"
+                              onsubmit="return confirm('¿Reactivar esta junta? Sus usuarios activos podrán volver a ingresar.');">
+                            <button type="submit" class="btn btn-verde btn-sm">Reactivar</button>
+                        </form>
+                        <template th:id="'administradores-' + ${junta.id}">
+                            <option th:each="admin : ${fila.administradores}" th:value="${admin.id}"
+                                    th:text="${admin.nombreCompleto} + ' (' + ${admin.cedula} + ')'">Administrador</option>
+                        </template>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+
+<div class="modal fade" id="modalRegistro" tabindex="-1" aria-labelledby="tituloRegistro" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <form class="modal-content" method="post" th:action="@{/plataforma/juntas}" th:object="${juntaFormulario}" novalidate>
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="tituloRegistro">Registro de Nueva Junta</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="registroNombre" class="form-label">Nombre de la junta</label>
+                    <input type="text" id="registroNombre" class="form-control" th:field="*{nombre}" maxlength="150" th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{nombre}"></div>
+                </div>
+                <div class="mb-3">
+                    <label for="registroRuc" class="form-label">RUC institucional</label>
+                    <input type="text" id="registroRuc" class="form-control" th:field="*{ruc}" maxlength="13" inputmode="numeric" placeholder="13 dígitos" th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{ruc}"></div>
+                </div>
+                <div class="mb-3">
+                    <label for="registroTipo" class="form-label">Tipo</label>
+                    <select id="registroTipo" class="form-select" th:field="*{tipo}" th:errorclass="is-invalid">
+                        <option value="">Seleccione</option>
+                        <option th:each="tipo : ${tipos}" th:value="${tipo}" th:text="${tipo}">Tipo</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{tipo}"></div>
+                </div>
+                <div class="mb-3">
+                    <label for="registroProvincia" class="form-label">Provincia</label>
+                    <select id="registroProvincia" class="form-select selector-provincia" data-canton="registroCanton" th:field="*{provincia}" th:errorclass="is-invalid">
+                        <option value="">Seleccione</option>
+                        <option th:each="provincia : ${provincias}" th:value="${provincia.nombre}" th:text="${provincia.nombre}">Provincia</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{provincia}"></div>
+                </div>
+                <div class="mb-3">
+                    <label for="registroCanton" class="form-label">Cantón</label>
+                    <select id="registroCanton" name="canton" class="form-select" th:data-actual="*{canton}"
+                            th:classappend="${#fields.hasErrors('canton')} ? 'is-invalid'">
+                        <option value="">Seleccione</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{canton}"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-verde">Guardar Organización</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEdicion" tabindex="-1" aria-labelledby="tituloEdicion" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <form id="formularioEdicion" class="modal-content" method="post" th:object="${edicionFormulario}"
+              th:action="${edicionId != null} ? @{/plataforma/juntas/{id}(id=${edicionId})} : @{/plataforma/juntas/0}" novalidate>
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="tituloEdicion">Editar Junta</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="edicionNombre" class="form-label">Nombre de la junta</label>
+                    <input type="text" id="edicionNombre" class="form-control" th:field="*{nombre}" maxlength="150" th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{nombre}"></div>
+                </div>
+                <div class="mb-3">
+                    <label for="edicionRuc" class="form-label">RUC institucional</label>
+                    <input type="text" id="edicionRuc" class="form-control" th:field="*{ruc}" maxlength="13" inputmode="numeric" th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{ruc}"></div>
+                </div>
+                <div class="mb-3">
+                    <label for="edicionTipo" class="form-label">Tipo</label>
+                    <select id="edicionTipo" class="form-select" th:field="*{tipo}" th:errorclass="is-invalid">
+                        <option value="">Seleccione</option>
+                        <option th:each="tipo : ${tipos}" th:value="${tipo}" th:text="${tipo}">Tipo</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{tipo}"></div>
+                </div>
+                <div class="mb-3">
+                    <label for="edicionProvincia" class="form-label">Provincia</label>
+                    <select id="edicionProvincia" class="form-select selector-provincia" data-canton="edicionCanton" th:field="*{provincia}" th:errorclass="is-invalid">
+                        <option value="">Seleccione</option>
+                        <option th:each="provincia : ${provincias}" th:value="${provincia.nombre}" th:text="${provincia.nombre}">Provincia</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{provincia}"></div>
+                </div>
+                <div class="mb-3">
+                    <label for="edicionCanton" class="form-label">Cantón</label>
+                    <select id="edicionCanton" name="canton" class="form-select" th:data-actual="*{canton}"
+                            th:classappend="${#fields.hasErrors('canton')} ? 'is-invalid'">
+                        <option value="">Seleccione</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{canton}"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-verde">Guardar cambios</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="modalSuspension" tabindex="-1" aria-labelledby="tituloSuspension" aria-hidden="true">
+    <div class="modal-dialog">
+        <form id="formularioSuspension" class="modal-content" method="post" th:action="@{/plataforma/juntas/0/suspender}"
+              onsubmit="return confirm('¿Suspender esta junta? Sus usuarios no podrán ingresar hasta reactivarla.');">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="tituloSuspension">Suspender junta</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p>Junta: <strong id="suspensionNombre"></strong></p>
+                <label for="motivo" class="form-label">Motivo de la suspensión</label>
+                <textarea id="motivo" name="motivo" class="form-control" rows="3" maxlength="300" required></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-danger">Suspender</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="offcanvas offcanvas-end" tabindex="-1" id="panelAdministrador" aria-labelledby="tituloAdministrador">
+    <div class="offcanvas-header border-bottom">
+        <h2 class="offcanvas-title h5" id="tituloAdministrador">Asignar admin a junta</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button>
+    </div>
+    <div class="offcanvas-body">
+        <form id="formularioAdministrador" method="post" th:object="${administradorFormulario}" novalidate
+              th:action="${administradorJunta != null} ? @{/plataforma/juntas/{id}/administradores(id=${administradorJunta.id})} : @{/plataforma/juntas/0/administradores}">
+            <div class="border rounded p-2 mb-3 bg-light small">
+                <strong>Junta destino:</strong>
+                <span id="juntaDestino" th:text="${administradorJunta != null} ? ${administradorJunta.nombre} + ' (RUC: ' + ${administradorJunta.ruc} + ')' : ''"></span>
+            </div>
+            <div class="alert alert-danger" th:if="${#fields.hasGlobalErrors()}" th:each="error : ${#fields.globalErrors()}" th:text="${error}"></div>
+            <div class="mb-3">
+                <label for="adminReemplazado" class="form-label">Reasignar (opcional)</label>
+                <select id="adminReemplazado" name="reemplazadoId" class="form-select">
+                    <option value="">No reemplazar: agregar administrador</option>
+                </select>
+                <div class="form-text">Si eliges un administrador, su cuenta se desactiva antes de crear la nueva.</div>
+            </div>
+            <div class="mb-3">
+                <label for="adminCedula" class="form-label">Cédula de identidad</label>
+                <input type="text" id="adminCedula" class="form-control" th:field="*{cedula}" maxlength="10" inputmode="numeric" th:errorclass="is-invalid">
+                <div class="invalid-feedback" th:errors="*{cedula}"></div>
+            </div>
+            <div class="mb-3">
+                <label for="adminNombres" class="form-label">Nombres</label>
+                <input type="text" id="adminNombres" class="form-control" th:field="*{nombres}" maxlength="100" th:errorclass="is-invalid">
+                <div class="invalid-feedback" th:errors="*{nombres}"></div>
+            </div>
+            <div class="mb-3">
+                <label for="adminApellidos" class="form-label">Apellidos</label>
+                <input type="text" id="adminApellidos" class="form-control" th:field="*{apellidos}" maxlength="100" th:errorclass="is-invalid">
+                <div class="invalid-feedback" th:errors="*{apellidos}"></div>
+            </div>
+            <div class="mb-3">
+                <label for="adminEmail" class="form-label">Correo electrónico institucional</label>
+                <input type="email" id="adminEmail" class="form-control" th:field="*{email}" maxlength="120" th:errorclass="is-invalid">
+                <div class="invalid-feedback" th:errors="*{email}"></div>
+            </div>
+            <button type="submit" class="btn btn-verde w-100">Generar Cuenta y Asignar Rol</button>
+        </form>
+    </div>
+</div>
+
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+<script th:inline="javascript">
+    const catalogo = [[${catalogo}]];
+    const abrir = [[${abrir}]];
+    const juntaAdministrador = [[${administradorJunta != null ? administradorJunta.id : null}]];
+    const reemplazadoActual = [[${administradorFormulario.reemplazadoId}]];
+
+    function llenarCantones(selectorProvincia, actual) {
+        const selectorCanton = document.getElementById(selectorProvincia.dataset.canton);
+        const cantones = catalogo[selectorProvincia.value] || [];
+        selectorCanton.innerHTML = '';
+        selectorCanton.add(new Option('Seleccione', ''));
+        cantones.forEach(function (canton) {
+            selectorCanton.add(new Option(canton, canton, false, canton === actual));
+        });
+    }
+
+    document.querySelectorAll('.selector-provincia').forEach(function (selector) {
+        const actual = document.getElementById(selector.dataset.canton).dataset.actual;
+        llenarCantones(selector, actual);
+        selector.addEventListener('change', function () {
+            llenarCantones(selector, '');
+        });
+    });
+
+    function prepararAdministrador(id, texto) {
+        const formulario = document.getElementById('formularioAdministrador');
+        formulario.action = formulario.action.replace(/\/plataforma\/juntas\/\d+\/administradores$/, '/plataforma/juntas/' + id + '/administradores');
+        document.getElementById('juntaDestino').textContent = texto;
+        const selector = document.getElementById('adminReemplazado');
+        selector.querySelectorAll('option:not(:first-child)').forEach(function (opcion) { opcion.remove(); });
+        const plantilla = document.getElementById('administradores-' + id);
+        if (plantilla) {
+            plantilla.content.querySelectorAll('option').forEach(function (opcion) {
+                const copia = opcion.cloneNode(true);
+                copia.selected = String(reemplazadoActual) === copia.value;
+                selector.add(copia);
+            });
+        }
+    }
+
+    document.querySelectorAll('.boton-editar').forEach(function (boton) {
+        boton.addEventListener('click', function () {
+            const formulario = document.getElementById('formularioEdicion');
+            formulario.action = formulario.action.replace(/\/plataforma\/juntas\/\d+$/, '/plataforma/juntas/' + boton.dataset.id);
+            document.getElementById('edicionNombre').value = boton.dataset.nombre;
+            document.getElementById('edicionRuc').value = boton.dataset.ruc;
+            document.getElementById('edicionTipo').value = boton.dataset.tipo;
+            const provincia = document.getElementById('edicionProvincia');
+            provincia.value = boton.dataset.provincia;
+            llenarCantones(provincia, boton.dataset.canton);
+            formulario.querySelectorAll('.is-invalid').forEach(function (campo) { campo.classList.remove('is-invalid'); });
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('modalEdicion')).show();
+        });
+    });
+
+    document.querySelectorAll('.boton-administrador').forEach(function (boton) {
+        boton.addEventListener('click', function () {
+            prepararAdministrador(boton.dataset.id, boton.dataset.nombre + ' (RUC: ' + boton.dataset.ruc + ')');
+            bootstrap.Offcanvas.getOrCreateInstance(document.getElementById('panelAdministrador')).show();
+        });
+    });
+
+    document.querySelectorAll('.boton-suspender').forEach(function (boton) {
+        boton.addEventListener('click', function () {
+            const formulario = document.getElementById('formularioSuspension');
+            formulario.action = formulario.action.replace(/\/plataforma\/juntas\/\d+\/suspender$/, '/plataforma/juntas/' + boton.dataset.id + '/suspender');
+            document.getElementById('suspensionNombre').textContent = boton.dataset.nombre;
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('modalSuspension')).show();
+        });
+    });
+
+    if (abrir === 'registro') {
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalRegistro')).show();
+    } else if (abrir === 'edicion') {
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalEdicion')).show();
+    } else if (abrir === 'administrador' && juntaAdministrador !== null) {
+        prepararAdministrador(juntaAdministrador, document.getElementById('juntaDestino').textContent);
+        bootstrap.Offcanvas.getOrCreateInstance(document.getElementById('panelAdministrador')).show();
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Usuarios')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: barra}"></header>
+<div class="d-lg-flex">
+    <nav th:replace="~{fragments/layout :: menu}"></nav>
+    <main class="contenido flex-grow-1 p-3 p-md-4">
+        <h1 class="h4 mb-3">Usuarios</h1>
+        <ul th:replace="~{fragments/layout :: pestanasUsuarios('directiva')}"></ul>
+        <div th:replace="~{fragments/layout :: mensajes}"></div>
+        <div th:if="${credencial != null}" class="alert alert-success" role="alert" id="resumenCredencial">
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Nombre</dt>
+                <dd class="col-sm-9" th:text="${credencial.nombreCompleto}">Nombre</dd>
+                <dt class="col-sm-3">Usuario</dt>
+                <dd class="col-sm-9" th:text="${credencial.username}">Usuario</dd>
+                <dt class="col-sm-3">Contraseña temporal</dt>
+                <dd class="col-sm-9 temporal" th:text="${credencial.passwordTemporal}">Clave</dd>
+            </dl>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <div class="fw-semibold">Cuentas de la directiva</div>
+            <button type="button" class="btn btn-verde" data-bs-toggle="modal" data-bs-target="#modalNueva">Nueva cuenta</button>
+        </div>
+        <div class="table-responsive">
+            <table class="table align-middle bg-white">
+                <thead>
+                <tr>
+                    <th scope="col">Nombre</th>
+                    <th scope="col">Cédula</th>
+                    <th scope="col">Correo</th>
+                    <th scope="col">Rol</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col" class="text-end">Acciones</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="cuenta : ${cuentas}">
+                    <td th:text="${cuenta.nombreCompleto}">Nombre</td>
+                    <td th:text="${cuenta.cedula}">Cédula</td>
+                    <td th:text="${cuenta.email}">Correo</td>
+                    <td th:text="${cuenta.rol.etiqueta}">Rol</td>
+                    <td>
+                        <span th:if="${cuenta.activo}" class="badge bg-success">Activa</span>
+                        <span th:unless="${cuenta.activo}" class="badge bg-dark">Desactivada</span>
+                    </td>
+                    <td class="text-end text-nowrap">
+                        <th:block th:if="${#sets.contains(gestionables, cuenta.rol)}">
+                            <button type="button" class="btn btn-outline-dark btn-sm boton-editar"
+                                    th:data-id="${cuenta.id}" th:data-nombres="${cuenta.nombres}"
+                                    th:data-apellidos="${cuenta.apellidos}" th:data-email="${cuenta.email}"
+                                    th:data-rol="${cuenta.rol}" th:data-cedula="${cuenta.cedula}">Editar</button>
+                            <form th:if="${cuenta.activo}" class="d-inline" method="post"
+                                  th:action="@{/usuarios/directiva/{id}/desactivar(id=${cuenta.id})}">
+                                <button type="submit" class="btn btn-outline-danger btn-sm">Desactivar</button>
+                            </form>
+                            <form th:unless="${cuenta.activo}" class="d-inline" method="post"
+                                  th:action="@{/usuarios/directiva/{id}/reactivar(id=${cuenta.id})}">
+                                <button type="submit" class="btn btn-outline-dark btn-sm">Reactivar</button>
+                            </form>
+                        </th:block>
+                        <span th:unless="${#sets.contains(gestionables, cuenta.rol)}" class="small text-muted">Gestionada por la plataforma</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+
+<div class="modal fade" id="modalNueva" tabindex="-1" aria-labelledby="tituloNueva" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <form class="modal-content" method="post" th:action="@{/usuarios/directiva}" th:object="${directivaFormulario}" novalidate>
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="tituloNueva">Nueva cuenta de la directiva</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="nuevaCedula" class="form-label">Cédula</label>
+                    <input type="text" id="nuevaCedula" class="form-control" th:field="*{cedula}" maxlength="10" inputmode="numeric" th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{cedula}"></div>
+                </div>
+                <div class="mb-3">
+                    <label for="nuevaNombres" class="form-label">Nombres</label>
+                    <input type="text" id="nuevaNombres" class="form-control" th:field="*{nombres}" maxlength="100" th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{nombres}"></div>
+                </div>
+                <div class="mb-3">
+                    <label for="nuevaApellidos" class="form-label">Apellidos</label>
+                    <input type="text" id="nuevaApellidos" class="form-control" th:field="*{apellidos}" maxlength="100" th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{apellidos}"></div>
+                </div>
+                <div class="mb-3">
+                    <label for="nuevaEmail" class="form-label">Correo electrónico</label>
+                    <input type="email" id="nuevaEmail" class="form-control" th:field="*{email}" maxlength="120" th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{email}"></div>
+                </div>
+                <div class="mb-3">
+                    <label for="nuevaRol" class="form-label">Rol</label>
+                    <select id="nuevaRol" class="form-select" th:field="*{rol}" th:errorclass="is-invalid">
+                        <option value="">Seleccione</option>
+                        <option th:each="rol : ${roles}" th:value="${rol}" th:text="${rol.etiqueta}">Rol</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{rol}"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-verde">Crear cuenta</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEdicion" tabindex="-1" aria-labelledby="tituloEdicion" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <form id="formularioEdicion" class="modal-content" method="post" th:object="${edicionFormulario}" novalidate
+              th:action="${edicionId != null} ? @{/usuarios/directiva/{id}(id=${edicionId})} : @{/usuarios/directiva/0}">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="tituloEdicion">Editar cuenta</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="edicionCedula" class="form-label">Cédula</label>
+                    <input type="text" id="edicionCedula" class="form-control" th:value="*{cedula}" readonly>
+                </div>
+                <div class="mb-3">
+                    <label for="edicionNombres" class="form-label">Nombres</label>
+                    <input type="text" id="edicionNombres" class="form-control" th:field="*{nombres}" maxlength="100" th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{nombres}"></div>
+                </div>
+                <div class="mb-3">
+                    <label for="edicionApellidos" class="form-label">Apellidos</label>
+                    <input type="text" id="edicionApellidos" class="form-control" th:field="*{apellidos}" maxlength="100" th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{apellidos}"></div>
+                </div>
+                <div class="mb-3">
+                    <label for="edicionEmail" class="form-label">Correo electrónico</label>
+                    <input type="email" id="edicionEmail" class="form-control" th:field="*{email}" maxlength="120" th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{email}"></div>
+                </div>
+                <div class="mb-3">
+                    <label for="edicionRol" class="form-label">Rol</label>
+                    <select id="edicionRol" class="form-select" th:field="*{rol}" th:errorclass="is-invalid">
+                        <option th:each="rol : ${roles}" th:value="${rol}" th:text="${rol.etiqueta}">Rol</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{rol}"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-verde">Guardar cambios</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+<script th:inline="javascript">
+    const abrir = [[${abrir}]];
+    document.querySelectorAll('.boton-editar').forEach(function (boton) {
+        boton.addEventListener('click', function () {
+            const formulario = document.getElementById('formularioEdicion');
+            formulario.action = formulario.action.replace(/\/usuarios\/directiva\/\d+$/, '/usuarios/directiva/' + boton.dataset.id);
+            document.getElementById('edicionCedula').value = boton.dataset.cedula;
+            document.getElementById('edicionNombres').value = boton.dataset.nombres;
+            document.getElementById('edicionApellidos').value = boton.dataset.apellidos;
+            document.getElementById('edicionEmail').value = boton.dataset.email || '';
+            document.getElementById('edicionRol').value = boton.dataset.rol;
+            formulario.querySelectorAll('.is-invalid').forEach(function (campo) { campo.classList.remove('is-invalid'); });
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('modalEdicion')).show();
+        });
+    });
+    if (abrir === 'nueva') {
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalNueva')).show();
+    } else if (abrir === 'edicion') {
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalEdicion')).show();
+    }
+</script>
+</body>
+</html>

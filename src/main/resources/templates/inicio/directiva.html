@@ -7,14 +7,24 @@
     <nav th:replace="~{fragments/layout :: menu}"></nav>
     <main class="contenido flex-grow-1 p-3 p-md-4">
         <div th:replace="~{fragments/layout :: mensajes}"></div>
-        <h1 class="h4 mb-3">Panel de la directiva</h1>
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <p class="fs-5 mb-1">Bienvenido/a, <span class="fw-semibold" th:text="${sesion.nombreCompleto}">Usuario</span></p>
-                <p class="text-muted mb-3">
-                    <span th:text="${sesion.rol.etiqueta}">Rol</span><span th:if="${sesion.juntaNombre != null}" th:text="' · ' + ${sesion.juntaNombre}"> · Junta</span>
-                </p>
-                <p class="mb-0">Usa el menú para ir a los módulos de tu junta. Las tarjetas de resumen del panel estarán disponibles próximamente.</p>
+        <h1 class="h4 mb-1">Panel de la directiva</h1>
+        <p class="text-muted mb-3">
+            Bienvenido/a, <span class="fw-semibold" th:text="${sesion.nombreCompleto}">Usuario</span>
+            · <span th:text="${sesion.rol.etiqueta}">Rol</span>
+        </p>
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-xl-4 g-3">
+            <div class="col" th:each="tarjeta : ${tarjetas}">
+                <a class="card h-100 shadow-sm text-decoration-none text-dark tarjeta-panel" th:href="@{${tarjeta.ruta}}"
+                   th:data-ruta="${tarjeta.ruta}">
+                    <div class="card-body d-flex align-items-center gap-3">
+                        <i class="bi fs-2 text-verde" th:classappend="${tarjeta.icono}"></i>
+                        <div>
+                            <div class="small text-muted" th:text="${tarjeta.titulo}">Título</div>
+                            <div th:if="${tarjeta.valor != null}" class="fs-3 fw-bold" th:text="${tarjeta.valor}">0</div>
+                            <div th:if="${tarjeta.valor == null}" class="small fst-italic" th:text="#{panel.proximamente}">Disponible próximamente</div>
+                        </div>
+                    </div>
+                </a>
             </div>
         </div>
     </main>

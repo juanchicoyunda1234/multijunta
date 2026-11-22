@@ -87,10 +87,10 @@ class PermisosPorRolTest {
                 .andExpect(content().string(not(containsString("Nómina de socios"))));
 
         Usuario superAdmin = fabrica.superAdmin();
-        mvc.perform(get("/plataforma").with(fabrica.sesion(superAdmin)))
+        mvc.perform(get("/plataforma/juntas").with(fabrica.sesion(superAdmin)))
                 .andExpect(content().string(containsString("Juntas")))
                 .andExpect(content().string(containsString("Super Administrador")))
-                .andExpect(content().string(not(containsString("Junta Menú"))));
+                .andExpect(content().string(not(containsString(" · Junta Menú"))));
     }
 
     @Test

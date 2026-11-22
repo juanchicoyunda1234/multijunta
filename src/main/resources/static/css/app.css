@@ -80,3 +80,29 @@ body {
     letter-spacing: 0.1rem;
     word-break: break-all;
 }
+
+.logo-junta {
+    height: 32px;
+    width: auto;
+    max-width: 96px;
+    object-fit: contain;
+}
+
+.sector-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+@media print {
+    .barra-superior,
+    .menu-lateral,
+    .no-imprimir {
+        display: none !important;
+    }
+
+    body {
+        background-color: #FFFFFF;
+    }
+}

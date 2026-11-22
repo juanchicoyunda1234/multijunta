@@ -85,8 +85,8 @@ class LoginTest {
         Usuario admin = fabrica.superAdmin();
         mvc.perform(formLogin("/login").user(admin.getUsername()).password(Fabrica.CLAVE))
                 .andExpect(redirectedUrl("/inicio"));
-        mvc.perform(get("/inicio").with(fabrica.sesion(admin))).andExpect(redirectedUrl("/plataforma"));
-        mvc.perform(get("/plataforma").with(fabrica.sesion(admin))).andExpect(status().isOk());
+        mvc.perform(get("/inicio").with(fabrica.sesion(admin))).andExpect(redirectedUrl("/plataforma/juntas"));
+        mvc.perform(get("/plataforma/juntas").with(fabrica.sesion(admin))).andExpect(status().isOk());
     }
 
     @Test

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Configuración de Junta')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: barra}"></header>
+<div class="d-lg-flex">
+    <nav th:replace="~{fragments/layout :: menu}"></nav>
+    <main class="contenido flex-grow-1 p-3 p-md-4">
+        <h1 class="h4 mb-3">Configuración de Junta</h1>
+        <div th:replace="~{fragments/layout :: mensajes}"></div>
+        <form method="post" enctype="multipart/form-data" th:action="@{/junta/configuracion}"
+              th:object="${configuracionFormulario}" novalidate id="formularioConfiguracion">
+            <div class="alert alert-danger" role="alert" th:if="${#fields.hasGlobalErrors()}"
+                 th:each="error : ${#fields.globalErrors()}" th:text="${error}"></div>
+            <ul class="nav nav-tabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="tab-general" data-bs-toggle="tab" data-bs-target="#panel-general"
+                            type="button" role="tab" aria-controls="panel-general" aria-selected="true">Información General</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tab-ubicacion" data-bs-toggle="tab" data-bs-target="#panel-ubicacion"
+                            type="button" role="tab" aria-controls="panel-ubicacion" aria-selected="false">Ubicación</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tab-sectores" data-bs-toggle="tab" data-bs-target="#panel-sectores"
+                            type="button" role="tab" aria-controls="panel-sectores" aria-selected="false">Sectores</button>
+                </li>
+            </ul>
+            <div class="tab-content border border-top-0 rounded-bottom bg-white p-3 mb-3">
+                <div class="tab-pane fade show active" id="panel-general" role="tabpanel" aria-labelledby="tab-general">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label" for="nombreJunta">Nombre de la junta</label>
+                            <input type="text" id="nombreJunta" class="form-control" th:value="${junta.nombre}" readonly>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label" for="rucJunta">RUC</label>
+                            <input type="text" id="rucJunta" class="form-control" th:value="${junta.ruc}" readonly>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label" for="tipoJunta">Tipo</label>
+                            <input type="text" id="tipoJunta" class="form-control" th:value="${junta.tipo}" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="telefono">Teléfono</label>
+                            <input type="text" id="telefono" class="form-control" th:field="*{telefono}" maxlength="20"
+                                   th:errorclass="is-invalid">
+                            <div class="invalid-feedback" th:errors="*{telefono}"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="montoMultaInasistencia">Monto de multa por inasistencia (USD)</label>
+                            <input type="number" id="montoMultaInasistencia" class="form-control" step="0.01" min="0"
+                                   th:field="*{montoMultaInasistencia}" th:errorclass="is-invalid">
+                            <div class="invalid-feedback" th:errors="*{montoMultaInasistencia}"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="logo">Logo (PNG o JPG, hasta 5 MB)</label>
+                            <input type="file" id="logo" name="logo" class="form-control" accept="image/png,image/jpeg"
+                                   th:classappend="${#fields.hasErrors('logo')} ? 'is-invalid'">
+                            <div class="invalid-feedback" th:errors="*{logo}"></div>
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end" th:if="${junta.logoUrl != null}">
+                            <img th:src="@{/logo/{id}(id=${junta.id})}" alt="Logo actual de la junta" class="logo-junta">
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="panel-ubicacion" role="tabpanel" aria-labelledby="tab-ubicacion">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label" for="provinciaJunta">Provincia</label>
+                            <input type="text" id="provinciaJunta" class="form-control" th:value="${junta.provincia}" readonly>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="cantonJunta">Cantón</label>
+                            <input type="text" id="cantonJunta" class="form-control" th:value="${junta.canton}" readonly>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label" for="direccion">Dirección</label>
+                            <input type="text" id="direccion" class="form-control" th:field="*{direccion}" maxlength="200"
+                                   th:errorclass="is-invalid">
+                            <div class="invalid-feedback" th:errors="*{direccion}"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="panel-sectores" role="tabpanel" aria-labelledby="tab-sectores">
+                    <p class="fw-semibold mb-1">Registro de sectores y ramales</p>
+                    <p class="text-muted small">Defina los barrios o ramales que componen la junta.</p>
+                    <div class="input-group mb-1">
+                        <input type="text" id="nuevoSector" class="form-control" placeholder="Agregar sector..." maxlength="80"
+                               aria-label="Nombre del sector nuevo">
+                        <button type="button" class="btn btn-verde" id="botonAnadir">+ Añadir</button>
+                    </div>
+                    <div class="text-danger small mb-2" id="errorSector" role="alert"></div>
+                    <div class="alert alert-warning small" id="avisoSectores" th:text="#{sector.ninguno}"
+                         th:classappend="${#lists.isEmpty(sectores) and #lists.isEmpty(configuracionFormulario.sectoresNuevos)} ? '' : 'd-none'">Aviso</div>
+                    <ul class="list-group" id="listaSectores">
+                        <li class="list-group-item sector-item" th:each="sector : ${sectores}"
+                            th:unless="${#lists.contains(configuracionFormulario.sectoresQuitados, sector.id)}"
+                            th:data-nombre="${sector.nombre}" th:data-id="${sector.id}">
+                            <span th:text="${sector.nombre}">Sector</span>
+                            <button type="button" class="btn btn-outline-danger btn-sm boton-quitar" aria-label="Quitar sector">X</button>
+                        </li>
+                        <li class="list-group-item sector-item" th:each="nombre : ${configuracionFormulario.sectoresNuevos}"
+                            th:data-nombre="${nombre}">
+                            <span th:text="${nombre} + ' (nuevo)'">Sector</span>
+                            <input type="hidden" name="sectoresNuevos" th:value="${nombre}">
+                            <button type="button" class="btn btn-outline-danger btn-sm boton-quitar" aria-label="Quitar sector">X</button>
+                        </li>
+                    </ul>
+                    <div id="sectoresOcultos">
+                        <input type="hidden" name="sectoresQuitados" th:each="id : ${configuracionFormulario.sectoresQuitados}" th:value="${id}">
+                    </div>
+                </div>
+            </div>
+            <div class="text-end">
+                <button type="submit" class="btn btn-dark">Actualizar Datos</button>
+            </div>
+        </form>
+    </main>
+</div>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+<script th:inline="javascript">
+    const pestana = [[${pestana}]];
+    const foco = [[${foco}]];
+    const mensajes = { vacio: [[#{sector.vacio}]], duplicado: [[#{sector.duplicado}]] };
+    const lista = document.getElementById('listaSectores');
+    const ocultos = document.getElementById('sectoresOcultos');
+    const aviso = document.getElementById('avisoSectores');
+    const errorSector = document.getElementById('errorSector');
+    const campoNuevo = document.getElementById('nuevoSector');
+
+    function actualizarAviso() {
+        aviso.classList.toggle('d-none', lista.children.length > 0);
+    }
+
+    function quitar(item) {
+        if (item.dataset.id) {
+            const oculto = document.createElement('input');
+            oculto.type = 'hidden';
+            oculto.name = 'sectoresQuitados';
+            oculto.value = item.dataset.id;
+            ocultos.appendChild(oculto);
+        }
+        item.remove();
+        actualizarAviso();
+    }
+
+    lista.querySelectorAll('.boton-quitar').forEach(function (boton) {
+        boton.addEventListener('click', function () { quitar(boton.closest('li')); });
+    });
+
+    function anadir() {
+        const nombre = campoNuevo.value.trim();
+        errorSector.textContent = '';
+        if (!nombre) {
+            errorSector.textContent = mensajes.vacio;
+            return;
+        }
+        const existentes = Array.from(lista.querySelectorAll('li')).map(function (item) {
+            return item.dataset.nombre.trim().toLowerCase();
+        });
+        if (existentes.includes(nombre.toLowerCase())) {
+            errorSector.textContent = mensajes.duplicado;
+            return;
+        }
+        const item = document.createElement('li');
+        item.className = 'list-group-item sector-item';
+        item.dataset.nombre = nombre;
+        const texto = document.createElement('span');
+        texto.textContent = nombre + ' (nuevo)';
+        const oculto = document.createElement('input');
+        oculto.type = 'hidden';
+        oculto.name = 'sectoresNuevos';
+        oculto.value = nombre;
+        const boton = document.createElement('button');
+        boton.type = 'button';
+        boton.className = 'btn btn-outline-danger btn-sm';
+        boton.setAttribute('aria-label', 'Quitar sector');
+        boton.textContent = 'X';
+        boton.addEventListener('click', function () { quitar(item); });
+        item.append(texto, oculto, boton);
+        lista.appendChild(item);
+        campoNuevo.value = '';
+        actualizarAviso();
+    }
+
+    document.getElementById('botonAnadir').addEventListener('click', anadir);
+    campoNuevo.addEventListener('keydown', function (evento) {
+        if (evento.key === 'Enter') {
+            evento.preventDefault();
+            anadir();
+        }
+    });
+
+    if (pestana) {
+        bootstrap.Tab.getOrCreateInstance(document.getElementById('tab-' + pestana)).show();
+    }
+    if (foco && document.getElementById(foco)) {
+        setTimeout(function () { document.getElementById(foco).focus(); }, 200);
+    }
+</script>
+</body>
+</html>

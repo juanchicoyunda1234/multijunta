@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Usuarios')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: barra}"></header>
+<div class="d-lg-flex">
+    <nav th:replace="~{fragments/layout :: menu}"></nav>
+    <main class="contenido flex-grow-1 p-3 p-md-4">
+        <h1 class="h4 mb-3">Usuarios</h1>
+        <ul th:replace="~{fragments/layout :: pestanasUsuarios('socios')}"></ul>
+        <div th:replace="~{fragments/layout :: mensajes}"></div>
+        <form method="post" th:action="@{/usuarios/socios/credenciales}" id="formularioCredenciales">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                <div>
+                    <div class="fw-semibold">Padrón de socios</div>
+                    <div class="small text-muted">Seleccione uno o más socios sin cuenta para generar sus credenciales.</div>
+                </div>
+                <button type="submit" class="btn btn-verde" id="botonCredenciales" disabled>
+                    Crear Credenciales (<span id="cantidadSeleccionados">0</span> seleccionados)
+                </button>
+            </div>
+            <div class="table-responsive">
+                <table class="table align-middle bg-white">
+                    <thead>
+                    <tr>
+                        <th scope="col" style="width: 3rem;">
+                            <input type="checkbox" class="form-check-input" id="seleccionarTodos"
+                                   aria-label="Seleccionar todos los socios sin cuenta">
+                        </th>
+                        <th scope="col">Socio</th>
+                        <th scope="col">Sector</th>
+                        <th scope="col">Nómina</th>
+                        <th scope="col">Estado de cuenta</th>
+                        <th scope="col" class="text-end">Acción</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="socio : ${socios}">
+                        <td>
+                            <input type="checkbox" class="form-check-input casilla-socio" name="socioIds" th:value="${socio.id}"
+                                   th:disabled="${socio.estado.name() != 'ACTIVO' or socio.estadoCuenta.name() != 'SIN_CUENTA'}"
+                                   th:attr="aria-label='Seleccionar a ' + ${socio.nombreCompleto}">
+                        </td>
+                        <td>
+                            <div class="fw-semibold" th:text="${socio.nombreCompleto}">Socio</div>
+                            <div class="small text-muted" th:text="'CI: ' + ${socio.cedula}">CI</div>
+                        </td>
+                        <td th:text="${socio.sector.nombre}">Sector</td>
+                        <td>
+                            <span th:if="${socio.estado.name() == 'ACTIVO'}" class="badge text-bg-light border">Activo</span>
+                            <span th:unless="${socio.estado.name() == 'ACTIVO'}" class="badge bg-secondary">Inactivo</span>
+                        </td>
+                        <td>
+                            <span class="badge"
+                                  th:classappend="${socio.estadoCuenta.name() == 'ACTIVA'} ? 'bg-success' : (${socio.estadoCuenta.name() == 'DESACTIVADA'} ? 'bg-dark' : 'text-bg-light border')"
+                                  th:text="${socio.estadoCuenta.etiqueta}">Sin cuenta</span>
+                        </td>
+                        <td class="text-end">
+                            <button th:if="${socio.estadoCuenta.name() == 'ACTIVA'}" type="submit" class="btn btn-outline-danger btn-sm"
+                                    th:form="'desactivar-' + ${socio.id}">Desactivar</button>
+                            <button th:if="${socio.estadoCuenta.name() == 'DESACTIVADA'}" type="submit" class="btn btn-outline-dark btn-sm"
+                                    th:form="'reactivar-' + ${socio.id}">Reactivar</button>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="small text-muted"><span id="resumenSeleccion">0</span> de <span id="totalSeleccionables">0</span> socios seleccionados</p>
+        </form>
+        <th:block th:each="socio : ${socios}">
+            <form th:if="${socio.estadoCuenta.name() == 'ACTIVA'}" th:id="'desactivar-' + ${socio.id}" method="post"
+                  th:action="@{/usuarios/socios/{id}/desactivar(id=${socio.id})}"></form>
+            <form th:if="${socio.estadoCuenta.name() == 'DESACTIVADA'}" th:id="'reactivar-' + ${socio.id}" method="post"
+                  th:action="@{/usuarios/socios/{id}/reactivar(id=${socio.id})}"></form>
+        </th:block>
+    </main>
+</div>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+<script>
+    const casillas = Array.from(document.querySelectorAll('.casilla-socio:not(:disabled)'));
+    const todos = document.getElementById('seleccionarTodos');
+    const boton = document.getElementById('botonCredenciales');
+
+    function actualizar() {
+        const seleccionados = casillas.filter(function (casilla) { return casilla.checked; }).length;
+        document.getElementById('cantidadSeleccionados').textContent = seleccionados;
+        document.getElementById('resumenSeleccion').textContent = seleccionados;
+        document.getElementById('totalSeleccionables').textContent = casillas.length;
+        boton.disabled = seleccionados === 0;
+        todos.checked = casillas.length > 0 && seleccionados === casillas.length;
+        todos.indeterminate = seleccionados > 0 && seleccionados < casillas.length;
+    }
+
+    todos.disabled = casillas.length === 0;
+    todos.addEventListener('change', function () {
+        casillas.forEach(function (casilla) { casilla.checked = todos.checked; });
+        actualizar();
+    });
+    casillas.forEach(function (casilla) { casilla.addEventListener('change', actualizar); });
+    actualizar();
+</script>
+</body>
+</html>

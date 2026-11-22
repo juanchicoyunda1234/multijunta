@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Credenciales generadas')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: barra}"></header>
+<div class="d-lg-flex">
+    <nav th:replace="~{fragments/layout :: menu}"></nav>
+    <main class="contenido flex-grow-1 p-3 p-md-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <h1 class="h4 m-0">Credenciales generadas</h1>
+            <div class="no-imprimir d-flex gap-2">
+                <button type="button" class="btn btn-verde" onclick="window.print()">Imprimir</button>
+                <a class="btn btn-outline-dark" th:href="@{/usuarios/socios}">Volver a socios</a>
+            </div>
+        </div>
+        <p class="text-muted">Esta lista se muestra una sola vez. Entregue cada contraseña temporal en persona; el socio
+            deberá cambiarla en su primer ingreso.</p>
+        <div th:if="${#lists.isEmpty(credenciales)}" class="alert alert-light border">
+            No se generó ninguna cuenta: los socios seleccionados ya tenían cuenta o están inactivos en la nómina.
+        </div>
+        <div class="table-responsive" th:unless="${#lists.isEmpty(credenciales)}">
+            <table class="table table-bordered bg-white">
+                <thead>
+                <tr>
+                    <th scope="col">Socio</th>
+                    <th scope="col">Usuario</th>
+                    <th scope="col">Contraseña temporal</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="credencial : ${credenciales}">
+                    <td th:text="${credencial.nombreCompleto}">Socio</td>
+                    <td th:text="${credencial.username}">Usuario</td>
+                    <td class="temporal" th:text="${credencial.passwordTemporal}">Clave</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

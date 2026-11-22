@@ -43,6 +43,13 @@ public class Socio extends Usuario {
         setRol(Rol.SOCIO);
     }
 
+    public EstadoCuenta getEstadoCuenta() {
+        if (!tieneCuenta) {
+            return EstadoCuenta.SIN_CUENTA;
+        }
+        return isActivo() ? EstadoCuenta.ACTIVA : EstadoCuenta.DESACTIVADA;
+    }
+
     public String getCodigoSocio() {
         return codigoSocio;
     }

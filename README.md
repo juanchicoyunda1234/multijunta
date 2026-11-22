@@ -3,8 +3,17 @@
 Aplicación web para juntas de riego, parroquiales y comunitarias del Ecuador. Una sola
 instalación atiende a varias juntas; cada usuario solo ve los datos de su junta.
 
-Especificación de esta versión: `specs/001-base-acceso-sesion/` (inicio y cierre de sesión,
-recuperación y cambio de contraseña, permisos por rol, campana de notificaciones).
+Especificaciones implementadas:
+
+- `specs/001-base-acceso-sesion/`: inicio y cierre de sesión, recuperación y cambio de
+  contraseña, permisos por rol, campana de notificaciones.
+- `specs/002-gestion-plataforma/`: listado, registro, edición y suspensión de juntas (Super
+  Administrador); asignación de administradores; configuración de la junta con sectores y logo;
+  módulo Usuarios (accesos de socios y cuentas de la directiva); panel de la directiva.
+
+Las cuentas creadas desde la aplicación (administradores, directiva y socios) usan la **cédula
+como usuario** y una contraseña temporal que se muestra una sola vez y debe cambiarse en el
+primer ingreso. Los logos subidos se guardan en `./uploads/logos`.
 
 ## Requisitos
 

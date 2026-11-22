@@ -20,12 +20,7 @@ public class InicioController {
 
     @GetMapping("/plataforma")
     public String plataforma() {
-        return "inicio/plataforma";
-    }
-
-    @GetMapping("/panel")
-    public String panel() {
-        return "inicio/directiva";
+        return "redirect:/plataforma/juntas";
     }
 
     @GetMapping("/mi-informacion")

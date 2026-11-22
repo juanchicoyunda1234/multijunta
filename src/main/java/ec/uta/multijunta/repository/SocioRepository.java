@@ -1,5 +1,6 @@
 package ec.uta.multijunta.repository;
 
+import ec.uta.multijunta.model.EstadoSocio;
 import ec.uta.multijunta.model.Socio;
 import java.util.List;
 import java.util.Optional;
@@ -12,4 +13,10 @@ public interface SocioRepository extends JpaRepository<Socio, Long> {
     Optional<Socio> findByIdAndJuntaId(Long id, Long juntaId);
 
     boolean existsByCodigoSocioAndJuntaId(String codigoSocio, Long juntaId);
+
+    long countByJuntaIdAndEstado(Long juntaId, EstadoSocio estado);
+
+    boolean existsBySectorId(Long sectorId);
+
+    List<Socio> findAllByJuntaIdOrderByApellidosAscNombresAsc(Long juntaId);
 }

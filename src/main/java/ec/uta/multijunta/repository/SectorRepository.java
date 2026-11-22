@@ -10,4 +10,8 @@ public interface SectorRepository extends JpaRepository<Sector, Long> {
     List<Sector> findAllByJuntaId(Long juntaId);
 
     Optional<Sector> findByIdAndJuntaId(Long id, Long juntaId);
+
+    boolean existsByJuntaIdAndNombreIgnoreCase(Long juntaId, String nombre);
+
+    List<Sector> findAllByJuntaIdOrderByNombreAsc(Long juntaId);
 }
