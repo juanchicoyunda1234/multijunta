@@ -22,6 +22,11 @@ import ec.uta.multijunta.repository.EgresoRepository;
 import ec.uta.multijunta.repository.ItemInventarioRepository;
 import ec.uta.multijunta.repository.PagoRepository;
 import ec.uta.multijunta.service.IAsistencia;
+import ec.uta.multijunta.model.EstadoConvocatoria;
+import ec.uta.multijunta.repository.ActaRepository;
+import ec.uta.multijunta.repository.ComunicacionExternaRepository;
+import ec.uta.multijunta.repository.ConvocatoriaRepository;
+import ec.uta.multijunta.repository.MensajeRepository;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.List;
@@ -87,6 +92,18 @@ class DatosPruebaTest {
     @Autowired
     private IAsistencia iAsistencia;
 
+    @Autowired
+    private ConvocatoriaRepository convocatorias;
+
+    @Autowired
+    private ActaRepository actas;
+
+    @Autowired
+    private ComunicacionExternaRepository comunicaciones;
+
+    @Autowired
+    private MensajeRepository mensajes;
+
     @Test
     @DisplayName("HU6-1, HU6-2 y HU6-4 carga juntas, roles, sectores y socios sin duplicar")
     void cargaCompletaSinDuplicados() {
@@ -127,6 +144,14 @@ class DatosPruebaTest {
             assertThat(items.findByJuntaIdOrderByNombreAsc(junta.getId())).hasSize(3);
             assertThat(items.contarStockBajo(junta.getId())).isEqualTo(1);
             assertThat(activos.findByJuntaIdOrderByIdDesc(junta.getId())).hasSize(2);
+            assertThat(convocatorias.findByJuntaIdOrderByFechaPublicacionDescIdDesc(junta.getId())).hasSize(2);
+            assertThat(convocatorias.findByJuntaIdAndEstadoOrderByFechaPublicacionDescIdDesc(junta.getId(),
+                    EstadoConvocatoria.PUBLICADA)).hasSize(1);
+            assertThat(actas.findByJuntaIdOrderByFechaDescIdDesc(junta.getId())).hasSize(2);
+            assertThat(actas.findByJuntaIdAndPublicaSociosTrueOrderByFechaDescIdDesc(junta.getId())).hasSize(1);
+            assertThat(comunicaciones.findByJuntaIdOrderByFechaDescIdDesc(junta.getId())).hasSize(2)
+                    .anyMatch(comunicacion -> comunicacion.isPendienteDigitalizacion());
+            assertThat(mensajes.noLeidosDeSociosParaDirectiva(junta.getId())).isEqualTo(1);
         }
 
         Junta suspendida = juntas.findAll().stream().filter(junta -> !junta.isActiva()).findFirst().orElseThrow();

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Mensajes')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: barra}"></header>
+<div class="d-lg-flex">
+    <nav th:replace="~{fragments/layout :: menu}"></nav>
+    <main class="contenido flex-grow-1 p-3 p-md-4">
+        <h1 class="h4 mb-3">Mensajes</h1>
+        <div th:replace="~{fragments/layout :: mensajes}"></div>
+        <div class="row g-3 vista-mensajes" th:classappend="${vista != null} ? 'con-conversacion' : 'sin-conversacion'">
+            <div class="col-12 col-md-4 columna-contactos">
+                <section class="card bg-white h-100">
+                    <div class="card-header bg-white">
+                        <form method="get" th:action="${vista != null} ? @{/mensajes/{id}(id=${vista.conversacion.id})} : @{/mensajes}">
+                            <label class="visually-hidden" for="q">Buscar contacto</label>
+                            <input type="search" class="form-control form-control-sm" id="q" name="q" th:value="${q}"
+                                   placeholder="Buscar contacto">
+                        </form>
+                    </div>
+                    <div class="list-group list-group-flush lista-contactos">
+                        <th:block th:each="contacto : ${contactos}">
+                            <a th:if="${contacto.conversacionId != null}" class="list-group-item list-group-item-action"
+                               th:classappend="${vista != null and vista.conversacion.id == contacto.conversacionId} ? 'active'"
+                               th:href="@{/mensajes/{id}(id=${contacto.conversacionId})}">
+                                <div class="d-flex justify-content-between gap-2">
+                                    <strong class="text-truncate" th:text="${contacto.nombre}">Contacto</strong>
+                                    <span th:if="${contacto.noLeidos > 0}" class="badge bg-danger rounded-pill" th:text="${contacto.noLeidos}">0</span>
+                                </div>
+                                <div class="small text-truncate" th:text="${contacto.detalle}">Detalle</div>
+                                <div class="small text-muted text-truncate" th:text="${contacto.ultimo}">Último</div>
+                            </a>
+                            <form th:if="${contacto.conversacionId == null}" method="post" th:action="@{/mensajes/nueva}"
+                                  class="list-group-item p-0">
+                                <input type="hidden" name="usuarioId" th:value="${contacto.usuarioId}">
+                                <button type="submit" class="btn btn-link text-start text-dark text-decoration-none w-100 px-3 py-2">
+                                    <strong class="d-block text-truncate" th:text="${contacto.nombre}">Contacto</strong>
+                                    <span class="small d-block text-truncate" th:text="${contacto.detalle}">Detalle</span>
+                                </button>
+                            </form>
+                        </th:block>
+                        <p th:if="${#lists.isEmpty(contactos)}" class="text-muted small p-3 m-0">No hay contactos.</p>
+                    </div>
+                </section>
+            </div>
+            <div class="col-12 col-md-8 columna-conversacion">
+                <section class="card bg-white h-100" th:if="${vista != null}">
+                    <div class="card-header bg-white d-flex align-items-center gap-2">
+                        <a class="btn btn-outline-dark btn-sm d-md-none" th:href="@{/mensajes}" aria-label="Volver a contactos">&laquo;</a>
+                        <strong th:text="${vista.titulo}">Conversación</strong>
+                    </div>
+                    <div class="card-body" id="contenedorBurbujas"
+                         th:attr="data-ruta=@{/mensajes/{id}/burbujas(id=${vista.conversacion.id})}">
+                        <div th:replace="~{mensajes/burbujas :: burbujas}"></div>
+                    </div>
+                    <div class="card-footer bg-white">
+                        <form method="post" enctype="multipart/form-data" id="formularioMensaje"
+                              th:action="@{/mensajes/{id}(id=${vista.conversacion.id})}">
+                            <div class="input-group">
+                                <label class="visually-hidden" for="contenido">Mensaje</label>
+                                <textarea class="form-control" id="contenido" name="contenido" rows="1" maxlength="2000"
+                                          placeholder="Escriba un mensaje" th:text="${contenido}"></textarea>
+                                <label class="btn btn-outline-dark mb-0" for="imagen" title="Adjuntar imagen">
+                                    <i class="bi bi-image"></i><span class="visually-hidden">Adjuntar imagen</span>
+                                </label>
+                                <input type="file" class="d-none" id="imagen" name="imagen" accept=".png,.jpg,.jpeg">
+                                <button type="submit" class="btn btn-verde" id="botonEnviar" disabled>Enviar</button>
+                            </div>
+                            <div class="small text-muted mt-1" id="nombreImagen"></div>
+                        </form>
+                    </div>
+                </section>
+                <section class="card card-body bg-white h-100 text-muted" th:if="${vista == null}">
+                    Elija un contacto para ver la conversación.
+                </section>
+            </div>
+        </div>
+    </main>
+</div>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+<script th:if="${vista != null}">
+    const rutaBurbujas = document.getElementById('contenedorBurbujas').dataset.ruta;
+    const contenido = document.getElementById('contenido');
+    const imagen = document.getElementById('imagen');
+    const enviar = document.getElementById('botonEnviar');
+    function revisarEnvio() {
+        enviar.disabled = contenido.value.trim() === '' && imagen.files.length === 0;
+        document.getElementById('nombreImagen').textContent = imagen.files.length ? imagen.files[0].name : '';
+    }
+    contenido.addEventListener('input', revisarEnvio);
+    imagen.addEventListener('change', revisarEnvio);
+    revisarEnvio();
+    function bajarAlFinal() {
+        const lista = document.getElementById('burbujas');
+        if (lista) {
+            lista.scrollTop = lista.scrollHeight;
+        }
+    }
+    bajarAlFinal();
+    setInterval(function () {
+        fetch(rutaBurbujas, {credentials: 'same-origin'})
+            .then(function (respuesta) { return respuesta.ok ? respuesta.text() : null; })
+            .then(function (html) {
+                if (html) {
+                    document.getElementById('burbujas').outerHTML = html;
+                    bajarAlFinal();
+                }
+            });
+    }, 15000);
+</script>
+</body>
+</html>

@@ -27,7 +27,15 @@
                     th:text="' · ' + ${sesion.juntaNombre}"> · Junta</span>
             </div>
         </div>
-        <a th:href="@{/notificaciones}" class="btn btn-link text-dark position-relative" aria-label="Notificaciones">
+        <a th:if="${puedeMensajes}" th:href="@{/mensajes}" class="btn btn-link text-dark position-relative"
+           aria-label="Mensajes" id="enlaceMensajes">
+            <i class="bi bi-chat-dots fs-5"></i>
+            <span th:if="${mensajesNoLeidos > 0}" id="contadorMensajes"
+                  class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                  th:text="${mensajesNoLeidos}">0</span>
+        </a>
+        <a th:href="@{/notificaciones}" class="btn btn-link text-dark position-relative" aria-label="Notificaciones"
+           id="enlaceNotificaciones">
             <i class="bi bi-bell fs-5"></i>
             <span th:if="${notificacionesNoLeidas > 0}" id="contadorNotificaciones"
                   class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
@@ -97,6 +105,39 @@
 
 <th:block th:fragment="scripts">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:if="${sesion != null}" th:inline="javascript">
+        (function () {
+            const rutaContadores = /*[[@{/contadores}]]*/ '/contadores';
+            function pintar(enlaceId, contadorId, valor) {
+                const enlace = document.getElementById(enlaceId);
+                if (!enlace) {
+                    return;
+                }
+                let contador = document.getElementById(contadorId);
+                if (valor > 0) {
+                    if (!contador) {
+                        contador = document.createElement('span');
+                        contador.id = contadorId;
+                        contador.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger';
+                        enlace.appendChild(contador);
+                    }
+                    contador.textContent = valor;
+                } else if (contador) {
+                    contador.remove();
+                }
+            }
+            setInterval(function () {
+                fetch(rutaContadores, {credentials: 'same-origin', headers: {'Accept': 'application/json'}})
+                    .then(function (respuesta) { return respuesta.ok ? respuesta.json() : null; })
+                    .then(function (datos) {
+                        if (datos) {
+                            pintar('enlaceNotificaciones', 'contadorNotificaciones', datos.notificaciones);
+                            pintar('enlaceMensajes', 'contadorMensajes', datos.mensajes);
+                        }
+                    });
+            }, 15000);
+        })();
+    </script>
 </th:block>
 </body>
 </html>

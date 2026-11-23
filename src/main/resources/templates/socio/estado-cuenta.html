@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Estado de cuenta')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: barra}"></header>
+<div class="d-lg-flex">
+    <nav th:replace="~{fragments/layout :: menu}"></nav>
+    <main class="contenido flex-grow-1 p-3 p-md-4">
+        <h1 class="h4 mb-3">Mi Panel</h1>
+        <div class="no-imprimir">
+            <ul th:replace="~{fragments/socio :: pestanas(${pestana})}"></ul>
+        </div>
+        <section class="card card-body bg-white text-center mb-3">
+            <div class="small text-muted" th:text="${estado.socio.nombreCompleto + ' · CI ' + estado.socio.cedula}">Socio</div>
+            <div class="small text-uppercase text-muted mt-2" th:text="#{socio.deudaTotal}">Deuda total</div>
+            <div class="display-6 fw-bold" th:classappend="${estado.alDia} ? 'deuda-cero' : 'deuda-pendiente'"
+                 th:text="${'$' + #numbers.formatDecimal(estado.deuda, 1, 'COMMA', 2, 'POINT')}">$0.00</div>
+            <div class="small" th:if="${estado.alDia}">Al día</div>
+        </section>
+        <section class="mb-3" th:unless="${#lists.isEmpty(estado.obligaciones)}">
+            <h2 class="h6">Obligaciones pendientes</h2>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle bg-white">
+                    <thead>
+                    <tr>
+                        <th scope="col">Concepto</th>
+                        <th scope="col">Tipo</th>
+                        <th scope="col">Vencimiento</th>
+                        <th scope="col" class="monto">Saldo</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="obligacion : ${estado.obligaciones}">
+                        <td th:text="${obligacion.concepto}">Concepto</td>
+                        <td th:text="${obligacion.tipo}">Tipo</td>
+                        <td>
+                            <span th:text="${obligacion.vencimiento != null ? #temporals.format(obligacion.vencimiento, 'dd/MM/yyyy') : '—'}">Fecha</span>
+                            <span th:if="${obligacion.vencida}" class="badge bg-danger ms-1">Vencida</span>
+                        </td>
+                        <td class="monto" th:text="${'$' + #numbers.formatDecimal(obligacion.saldoPendiente, 1, 'COMMA', 2, 'POINT')}">$0.00</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        <section>
+            <h2 class="h6">Historial de últimos pagos registrados</h2>
+            <p th:if="${#lists.isEmpty(estado.pagos)}" class="text-muted">No tiene pagos registrados.</p>
+            <div class="table-responsive" th:unless="${#lists.isEmpty(estado.pagos)}">
+                <table class="table table-sm align-middle bg-white">
+                    <thead>
+                    <tr>
+                        <th scope="col">Recibo</th>
+                        <th scope="col">Fecha</th>
+                        <th scope="col">Concepto</th>
+                        <th scope="col" class="monto">Monto</th>
+                        <th scope="col">Estado</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="pago : ${estado.pagos}">
+                        <td th:text="${pago.numero}">TX</td>
+                        <td th:text="${#temporals.format(pago.fecha, 'dd/MM/yyyy')}">Fecha</td>
+                        <td th:text="${pago.concepto}">Concepto</td>
+                        <td class="monto" th:text="${'$' + #numbers.formatDecimal(pago.monto, 1, 'COMMA', 2, 'POINT')}">$0.00</td>
+                        <td>
+                            <span th:if="${pago.reversado}" class="badge bg-secondary">Reversado</span>
+                            <span th:unless="${pago.reversado}" class="badge bg-success">Pagado</span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        <div class="no-imprimir text-end">
+            <button type="button" class="btn btn-dark" onclick="window.print()">Imprimir estado de cuenta</button>
+        </div>
+    </main>
+</div>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Mi Panel')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: barra}"></header>
+<div class="d-lg-flex">
+    <nav th:replace="~{fragments/layout :: menu}"></nav>
+    <main class="contenido flex-grow-1 p-3 p-md-4">
+        <div th:replace="~{fragments/layout :: mensajes}"></div>
+        <h1 class="h4 mb-3">Mi Panel</h1>
+        <ul th:replace="~{fragments/socio :: pestanas(${pestana})}"></ul>
+        <div class="row g-3">
+            <div class="col-12 col-md-6">
+                <section class="card card-body bg-white h-100">
+                    <h2 class="h6 text-muted">Ficha de socio</h2>
+                    <strong th:text="${resumen.socio.nombreCompleto}">Socio</strong>
+                    <div class="small" th:text="${'CI: ' + resumen.socio.cedula}">Cédula</div>
+                    <div class="small" th:text="${'Código: ' + resumen.socio.codigoSocio}">Código</div>
+                    <div class="small" th:text="${'Sector: ' + resumen.socio.sector.nombre}">Sector</div>
+                    <div class="small" th:text="${'Estado: ' + (resumen.socio.estado.name() == 'ACTIVO' ? 'Activo' : 'Inactivo')}">Estado</div>
+                </section>
+            </div>
+            <div class="col-12 col-md-6">
+                <section class="card card-body bg-white h-100">
+                    <h2 class="h6 text-muted" th:text="#{socio.deudaTotal}">Deuda total</h2>
+                    <a th:href="@{/mi-informacion/estado-cuenta}" class="text-decoration-none">
+                        <span class="h3 fw-bold" th:classappend="${resumen.deuda.signum() == 0} ? 'deuda-cero' : 'deuda-pendiente'"
+                              th:text="${'$' + #numbers.formatDecimal(resumen.deuda, 1, 'COMMA', 2, 'POINT')}">$0.00</span>
+                    </a>
+                    <h2 class="h6 text-muted mt-3">Próximo turno</h2>
+                    <div th:if="${resumen.proximoTurno.present}" th:with="turno=${resumen.proximoTurno.get()}"
+                         th:text="${#temporals.format(turno.fecha, 'dd/MM/yyyy') + ' · ' + #temporals.format(turno.horaInicio, 'HH:mm') + '–' + #temporals.format(turno.horaFin, 'HH:mm') + ' · ' + turno.recurso.nombre}">Turno</div>
+                    <div th:unless="${resumen.proximoTurno.present}" class="small text-muted" th:text="#{socio.sinTurnos}">Sin turnos</div>
+                </section>
+            </div>
+        </div>
+        <section class="mt-3">
+            <h2 class="h6">Convocatorias</h2>
+            <p th:if="${#lists.isEmpty(resumen.convocatorias)}" class="text-muted" th:text="#{publicaciones.vacio}">Vacío</p>
+            <th:block th:each="convocatoria : ${resumen.convocatorias}">
+                <article th:replace="~{fragments/socio :: convocatoria(${convocatoria})}"></article>
+            </th:block>
+        </section>
+    </main>
+</div>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

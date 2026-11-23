@@ -12,13 +12,21 @@ import ec.uta.multijunta.repository.SectorRepository;
 import ec.uta.multijunta.repository.SocioRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
+import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class CuotaService {
+
+    public static final String ENLACE_ESTADO_CUENTA = "/mi-informacion/estado-cuenta";
+
+    private static final Locale ESPANOL = Locale.forLanguageTag("es");
+    private static final DateTimeFormatter FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     public record Previa(List<Socio> destinatarios, int omitidos, BigDecimal total) {
     }
@@ -28,14 +36,19 @@ public class CuotaService {
     private final SectorRepository sectores;
     private final JuntaRepository juntas;
     private final UsuarioActual usuarioActual;
+    private final NotificacionService notificaciones;
+    private final MessageSource mensajes;
 
     public CuotaService(CuotaRepository cuotas, SocioRepository socios, SectorRepository sectores,
-            JuntaRepository juntas, UsuarioActual usuarioActual) {
+            JuntaRepository juntas, UsuarioActual usuarioActual, NotificacionService notificaciones,
+            MessageSource mensajes) {
         this.cuotas = cuotas;
         this.socios = socios;
         this.sectores = sectores;
         this.juntas = juntas;
         this.usuarioActual = usuarioActual;
+        this.notificaciones = notificaciones;
+        this.mensajes = mensajes;
     }
 
     @Transactional(readOnly = true)
@@ -87,6 +100,11 @@ public class CuotaService {
             cuota.setFecha(LocalDate.now());
             cuota.setFechaVencimiento(datos.fechaVencimiento());
             cuotas.save(cuota);
+            if (socio.isNotificable()) {
+                notificaciones.crear(socio, mensajes.getMessage("notificacion.cuota.titulo", null, ESPANOL),
+                        cuota.getConcepto() + " · $" + Montos.texto(monto) + " · vence "
+                                + cuota.getFechaVencimiento().format(FECHA), ENLACE_ESTADO_CUENTA);
+            }
         }
         return previa;
     }

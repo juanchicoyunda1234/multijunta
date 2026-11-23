@@ -37,10 +37,11 @@ public class PanelService {
     private final UsuarioActual usuarioActual;
     private final FinanzasService finanzas;
     private final InventarioService inventario;
+    private final MensajeService mensajes;
 
     public PanelService(SocioRepository socios, RecuperacionService recuperacion, EventoRepository eventos,
             TurnoRepository turnos, UsuarioActual usuarioActual, FinanzasService finanzas,
-            InventarioService inventario) {
+            InventarioService inventario, MensajeService mensajes) {
         this.socios = socios;
         this.recuperacion = recuperacion;
         this.eventos = eventos;
@@ -48,6 +49,7 @@ public class PanelService {
         this.usuarioActual = usuarioActual;
         this.finanzas = finanzas;
         this.inventario = inventario;
+        this.mensajes = mensajes;
     }
 
     private long proximosEventosYTurnos() {
@@ -82,7 +84,7 @@ public class PanelService {
                 new Definicion("Saldo actual", "bi-cash-stack", "/reportes", null, finanzas::saldoActual),
                 new Definicion("Deuda por cobrar", "bi-wallet2", "/pagos", null, finanzas::deudaPorCobrar),
                 new Definicion("Ítems con stock bajo", "bi-box-seam", "/inventario", inventario::itemsConStockBajo),
-                new Definicion("Mensajes no leídos", "bi-chat-dots", "/mensajes", null),
+                new Definicion("Mensajes no leídos", "bi-chat-dots", "/mensajes", mensajes::noLeidos),
                 new Definicion("Solicitudes de recuperación pendientes", "bi-key", "/recuperacion/solicitudes",
                         () -> (long) recuperacion.listarAtendibles().size()));
     }

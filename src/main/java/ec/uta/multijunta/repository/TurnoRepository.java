@@ -15,6 +15,9 @@ public interface TurnoRepository extends JpaRepository<Turno, Long> {
 
     Optional<Turno> findByIdAndJuntaId(Long id, Long juntaId);
 
+    List<Turno> findBySectorIdAndFechaBetweenOrderByFechaAscHoraInicioAsc(Long sectorId, LocalDate desde,
+            LocalDate hasta);
+
     long countByJuntaIdAndFechaBetween(Long juntaId, LocalDate desde, LocalDate hasta);
 
     boolean existsBySectorId(Long sectorId);

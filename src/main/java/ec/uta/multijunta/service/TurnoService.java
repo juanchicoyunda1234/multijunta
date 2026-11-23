@@ -3,6 +3,7 @@ package ec.uta.multijunta.service;
 import ec.uta.multijunta.model.Junta;
 import ec.uta.multijunta.model.Recurso;
 import ec.uta.multijunta.model.Sector;
+import ec.uta.multijunta.model.Socio;
 import ec.uta.multijunta.model.Turno;
 import ec.uta.multijunta.repository.JuntaRepository;
 import ec.uta.multijunta.repository.RecursoRepository;
@@ -132,7 +133,8 @@ public class TurnoService {
         String mensaje = turno.getFecha().format(FECHA) + " de " + turno.getHoraInicio().format(HORA) + " a "
                 + turno.getHoraFin().format(HORA) + " · " + turno.getRecurso().getNombre() + " · "
                 + turno.getSector().getNombre();
-        socios.findBySectorIdAndTieneCuentaTrueAndActivoTrue(turno.getSector().getId())
-                .forEach(socio -> notificaciones.crear(socio, titulo, mensaje, "/notificaciones"));
+        socios.findBySectorIdAndTieneCuentaTrueAndActivoTrue(turno.getSector().getId()).stream()
+                .filter(Socio::isNotificable)
+                .forEach(socio -> notificaciones.crear(socio, titulo, mensaje, "/mi-informacion/calendario"));
     }
 }

@@ -22,9 +22,4 @@ public class InicioController {
     public String plataforma() {
         return "redirect:/plataforma/juntas";
     }
-
-    @GetMapping("/mi-informacion")
-    public String miInformacion() {
-        return "inicio/socio";
-    }
 }

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Mi predio')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: barra}"></header>
+<div class="d-lg-flex">
+    <nav th:replace="~{fragments/layout :: menu}"></nav>
+    <main class="contenido flex-grow-1 p-3 p-md-4">
+        <h1 class="h4 mb-3">Mi Panel</h1>
+        <ul th:replace="~{fragments/socio :: pestanas(${pestana})}"></ul>
+        <p th:if="${#lists.isEmpty(predios)}" class="text-muted" th:text="#{socio.sinPredios}">Sin predios</p>
+        <div class="row g-3">
+            <div class="col-12 col-md-6" th:each="predio : ${predios}">
+                <section class="card card-body bg-white h-100">
+                    <h2 class="h6" th:text="${predio.codigo}">Código</h2>
+                    <div class="small"
+                         th:text="${'Área: ' + #numbers.formatDecimal(predio.area, 1, 'COMMA', 2, 'POINT') + ' m² · Sector: ' + predio.sector.nombre}">Área</div>
+                    <div class="small text-muted" th:if="${predio.ubicacion != null}" th:text="${predio.ubicacion}">Referencia</div>
+                    <div class="mapa-mini mt-2" th:id="'mapa-predio-' + ${predio.id}"
+                         th:attr="data-lat=${predio.latitud},data-lng=${predio.longitud}"></div>
+                    <img th:if="${predio.fotoNombre != null}" class="foto-predio mt-2"
+                         th:src="@{/mi-informacion/predio/{id}/foto(id=${predio.id})}" th:alt="'Foto del predio ' + ${predio.codigo}">
+                </section>
+            </div>
+        </div>
+    </main>
+</div>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+<th:block th:replace="~{fragments/mapa :: scripts}"></th:block>
+</body>
+</html>

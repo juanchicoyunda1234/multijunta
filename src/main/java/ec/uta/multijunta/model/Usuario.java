@@ -94,6 +94,10 @@ public class Usuario {
         return rol == Rol.SUPER_ADMIN || junta != null;
     }
 
+    public boolean isPuedeIngresar() {
+        return activo;
+    }
+
     public String getNombreCompleto() {
         return nombres + " " + apellidos;
     }

@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="burbujas" class="burbujas" id="burbujas">
+    <p th:if="${#lists.isEmpty(vista.burbujas)}" class="text-muted small m-0">Aún no hay mensajes en esta conversación.</p>
+    <div th:each="burbuja : ${vista.burbujas}" class="burbuja" th:classappend="${burbuja.propia} ? 'burbuja-propia'">
+        <div class="small fw-semibold" th:unless="${burbuja.propia}" th:text="${burbuja.autor}">Autor</div>
+        <a th:if="${burbuja.mensaje.imagenNombre != null}" target="_blank" rel="noopener"
+           th:href="@{/mensajes/imagen/{id}(id=${burbuja.mensaje.id})}">
+            <img th:src="@{/mensajes/imagen/{id}(id=${burbuja.mensaje.id})}" alt="Imagen adjunta" class="my-1">
+        </a>
+        <div th:if="${burbuja.mensaje.contenido != null}" style="white-space: pre-line" th:text="${burbuja.mensaje.contenido}">Texto</div>
+        <div class="small text-muted text-end" th:text="${#temporals.format(burbuja.mensaje.fechaEnvio, 'dd/MM HH:mm')}">Hora</div>
+    </div>
+</div>
+</body>
+</html>

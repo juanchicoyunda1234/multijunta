@@ -120,7 +120,6 @@ class PermisosPorRolTest {
     @DisplayName("FR-018 los módulos sin construir llevan a la página en construcción")
     void moduloEnConstruccion() throws Exception {
         Usuario secretario = fabrica.usuario(Rol.SECRETARIO, fabrica.junta("Junta Construcción"));
-        mvc.perform(get("/convocatorias").with(fabrica.sesion(secretario))).andExpect(redirectedUrl("/en-construccion"));
         mvc.perform(get("/en-construccion").with(fabrica.sesion(secretario)))
                 .andExpect(content().string(containsString("Módulo en construcción")));
     }

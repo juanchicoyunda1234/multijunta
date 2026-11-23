@@ -55,6 +55,9 @@ public class EventoController {
         }
         Evento evento = eventos.crear(formulario.datos());
         redireccion.addFlashAttribute("exito", "evento.creado");
+        if (evento.getTipo() == TipoEvento.ASAMBLEA || evento.getTipo() == TipoEvento.MINGA) {
+            redireccion.addFlashAttribute("ofrecerConvocatoria", evento.getId());
+        }
         return "redirect:/eventos?mes=" + YearMonth.from(evento.getFecha());
     }
 

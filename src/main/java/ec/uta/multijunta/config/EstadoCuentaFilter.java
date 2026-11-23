@@ -60,7 +60,7 @@ public class EstadoCuentaFilter extends OncePerRequestFilter {
     }
 
     private String motivoDeCierre(Optional<Usuario> usuario) {
-        if (usuario.isEmpty() || !usuario.get().isActivo()) {
+        if (usuario.isEmpty() || !usuario.get().isPuedeIngresar()) {
             return "desactivada";
         }
         if (usuario.get().getJunta() != null && !usuario.get().getJunta().isActiva()) {

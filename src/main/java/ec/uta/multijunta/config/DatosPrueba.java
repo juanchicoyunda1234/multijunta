@@ -1,6 +1,24 @@
 package ec.uta.multijunta.config;
 
+import ec.uta.multijunta.model.Acta;
 import ec.uta.multijunta.model.ActivoFijo;
+import ec.uta.multijunta.model.ComunicacionExterna;
+import ec.uta.multijunta.model.Conversacion;
+import ec.uta.multijunta.model.Convocatoria;
+import ec.uta.multijunta.model.EstadoConvocatoria;
+import ec.uta.multijunta.model.Mensaje;
+import ec.uta.multijunta.model.PrioridadConvocatoria;
+import ec.uta.multijunta.model.SecuenciaIngreso;
+import ec.uta.multijunta.model.TipoConvocatoria;
+import ec.uta.multijunta.model.TipoDocumentoExterno;
+import ec.uta.multijunta.repository.ActaRepository;
+import ec.uta.multijunta.repository.ComunicacionExternaRepository;
+import ec.uta.multijunta.repository.ConversacionRepository;
+import ec.uta.multijunta.repository.ConvocatoriaRepository;
+import ec.uta.multijunta.repository.MensajeRepository;
+import ec.uta.multijunta.repository.SecuenciaIngresoRepository;
+import ec.uta.multijunta.service.ArchivoService;
+import java.nio.charset.StandardCharsets;
 import ec.uta.multijunta.model.Asistencia;
 import ec.uta.multijunta.model.CategoriaActivo;
 import ec.uta.multijunta.model.CategoriaEgreso;
@@ -90,6 +108,119 @@ public class DatosPrueba implements CommandLineRunner {
 
     @Autowired
     private ActivoFijoRepository activosFijos;
+
+    @Autowired
+    private ConvocatoriaRepository convocatorias;
+
+    @Autowired
+    private ActaRepository actas;
+
+    @Autowired
+    private ComunicacionExternaRepository comunicaciones;
+
+    @Autowired
+    private SecuenciaIngresoRepository secuencias;
+
+    @Autowired
+    private ConversacionRepository conversaciones;
+
+    @Autowired
+    private MensajeRepository mensajes;
+
+    @Autowired
+    private ArchivoService archivos;
+
+    private static final byte[] PDF_DEMOSTRACION = ("%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n"
+            + "2 0 obj<</Type/Pages/Kids[]/Count 0>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n")
+            .getBytes(StandardCharsets.US_ASCII);
+
+    private void comunicacionesDePrueba(Junta junta, Usuario secretario, Usuario admin, Socio socio) {
+        LocalDate hoy = LocalDate.now();
+        convocatoria(junta, secretario, "Asamblea General Ordinaria", TipoConvocatoria.ASAMBLEA, hoy.plusDays(7),
+                PrioridadConvocatoria.URGENTE, LocalDateTime.now().minusHours(2), EstadoConvocatoria.PUBLICADA);
+        convocatoria(junta, secretario, "Minga de limpieza de la acequia", TipoConvocatoria.MINGA, hoy.plusDays(12),
+                PrioridadConvocatoria.NORMAL, LocalDateTime.now().plusDays(1), EstadoConvocatoria.BORRADOR);
+        acta(junta, "Acta de Asamblea Ordinaria Nº 01", hoy.minusDays(20), true);
+        acta(junta, "Acta de reunión de directiva", hoy.minusDays(6), false);
+        SecuenciaIngreso secuencia = new SecuenciaIngreso();
+        secuencia.setJunta(junta);
+        secuencia.setAnio(hoy.getYear());
+        comunicacion(junta, secretario, secuencia, "Ministerio de Ambiente", "Inspección de canales de riego",
+                hoy.minusDays(8), TipoDocumentoExterno.OFICIO, true);
+        comunicacion(junta, secretario, secuencia, "Prefectura de Tungurahua", "Convocatoria a taller de riego",
+                hoy.minusDays(2), TipoDocumentoExterno.NOTIFICACION, false);
+        secuencias.save(secuencia);
+        Conversacion conversacion = new Conversacion();
+        conversacion.setJunta(junta);
+        conversacion.setSocio(socio);
+        conversacion = conversaciones.save(conversacion);
+        Mensaje bienvenida = mensaje(conversacion, admin, "Bienvenido al canal de mensajes de la junta.",
+                LocalDateTime.now().minusDays(1));
+        Mensaje consulta = mensaje(conversacion, socio, "Buenos días, ¿cuándo es mi próximo turno de riego?",
+                LocalDateTime.now().minusHours(3));
+        conversacion.setUltimoLeidoA(bienvenida.getId());
+        conversacion.setUltimoLeidoB(bienvenida.getId());
+        conversacion.setActualizada(consulta.getFechaEnvio());
+        conversaciones.save(conversacion);
+    }
+
+    private void convocatoria(Junta junta, Usuario autor, String titulo, TipoConvocatoria tipo, LocalDate fecha,
+            PrioridadConvocatoria prioridad, LocalDateTime publicacion, EstadoConvocatoria estado) {
+        Convocatoria convocatoria = new Convocatoria();
+        convocatoria.setJunta(junta);
+        convocatoria.setAutor(autor);
+        convocatoria.setTitulo(titulo);
+        convocatoria.setTipo(tipo);
+        convocatoria.setFechaEvento(fecha);
+        convocatoria.setHora(LocalTime.of(9, 0));
+        convocatoria.setLugar("Casa comunal");
+        convocatoria.setContenido("1. Constatación del quórum\n2. Informe de la directiva\n3. Varios");
+        convocatoria.setPrioridad(prioridad);
+        convocatoria.setFechaPublicacion(publicacion);
+        convocatoria.setEstado(estado);
+        convocatorias.save(convocatoria);
+    }
+
+    private void acta(Junta junta, String titulo, LocalDate fecha, boolean publica) {
+        Acta acta = new Acta();
+        acta.setJunta(junta);
+        acta.setTitulo(titulo);
+        acta.setFecha(fecha);
+        acta.setTipoEvento(TipoEvento.ASAMBLEA);
+        acta.setContenido("Resumen de los puntos tratados");
+        acta.setPublicaSocios(publica);
+        acta.setDocumentoNombre("pendiente");
+        acta = actas.save(acta);
+        acta.setDocumentoNombre(archivos.guardarBytes(ArchivoService.ACTAS, "acta-" + acta.getId(), PDF_DEMOSTRACION, "pdf"));
+        actas.save(acta);
+    }
+
+    private void comunicacion(Junta junta, Usuario secretario, SecuenciaIngreso secuencia, String remitente,
+            String asunto, LocalDate fecha, TipoDocumentoExterno tipo, boolean conDocumento) {
+        ComunicacionExterna comunicacion = new ComunicacionExterna();
+        comunicacion.setJunta(junta);
+        comunicacion.setNumeroIngreso(String.format("CE-%d-%04d", secuencia.getAnio(), secuencia.siguiente()));
+        comunicacion.setRemitente(remitente);
+        comunicacion.setAsunto(asunto);
+        comunicacion.setFecha(fecha);
+        comunicacion.setTipoDocumento(tipo);
+        comunicacion.setRegistradoPor(secretario);
+        comunicacion = comunicaciones.save(comunicacion);
+        if (conDocumento) {
+            comunicacion.setDocumentoNombre(archivos.guardarBytes(ArchivoService.COMUNICACIONES,
+                    "comunicacion-" + comunicacion.getId(), PDF_DEMOSTRACION, "pdf"));
+            comunicaciones.save(comunicacion);
+        }
+    }
+
+    private Mensaje mensaje(Conversacion conversacion, Usuario remitente, String contenido, LocalDateTime fecha) {
+        Mensaje mensaje = new Mensaje();
+        mensaje.setConversacion(conversacion);
+        mensaje.setRemitente(remitente);
+        mensaje.setContenido(contenido);
+        mensaje.setFechaEnvio(fecha);
+        return mensajes.save(mensaje);
+    }
 
     public DatosPrueba(JuntaRepository juntas, SectorRepository sectores, UsuarioRepository usuarios,
             SocioService socioService, PasswordEncoder codificador, RecursoRepository recursos,
@@ -286,8 +417,8 @@ public class DatosPrueba implements CommandLineRunner {
         Junta riego = junta("Junta de Riego San Pedro", TipoJunta.RIEGO, "1890000001001", "Ambato", true);
         Sector norte = sector(riego, "Sector Norte");
         Sector sur = sector(riego, "Sector Sur");
-        usuario("admin.sanpedro", "1800000011", "Luis", "Paredes", Rol.ADMIN_JUNTA, riego);
-        usuario("secretaria.sanpedro", "1800000012", "María", "Chicaiza", Rol.SECRETARIO, riego);
+        Usuario adminRiego = usuario("admin.sanpedro", "1800000011", "Luis", "Paredes", Rol.ADMIN_JUNTA, riego);
+        Usuario secretariaRiego = usuario("secretaria.sanpedro", "1800000012", "María", "Chicaiza", Rol.SECRETARIO, riego);
         Usuario tesoreroRiego = usuario("tesorero.sanpedro", "1800000013", "Jorge", "Villacís", Rol.TESORERO, riego);
         Usuario desactivado = usuario("secretario.anterior", "1800000014", "Ramiro", "Sánchez", Rol.SECRETARIO, riego);
         desactivado.setActivo(false);
@@ -297,18 +428,20 @@ public class DatosPrueba implements CommandLineRunner {
         socio(riego, norte, "1800000103", "Carmen", "Pilla", "SP-003", false, false, EstadoSocio.INACTIVO);
         administrativos(riego, norte, sur, List.of(rosa, manuel), "-1.241700", "-78.619700");
         financieros(riego, tesoreroRiego, List.of(rosa, manuel));
+        comunicacionesDePrueba(riego, secretariaRiego, adminRiego, rosa);
 
         Junta rosario = junta("Junta Comunitaria El Rosario", TipoJunta.COMUNITARIA, "1890000002001", "San Pedro de Pelileo", true);
         Sector alto = sector(rosario, "Sector Alto");
         Sector bajo = sector(rosario, "Sector Bajo");
-        usuario("admin.rosario", "1800000021", "Diana", "Guevara", Rol.ADMIN_JUNTA, rosario);
-        usuario("secretario.rosario", "1800000022", "Pablo", "Freire", Rol.SECRETARIO, rosario);
+        Usuario adminRosario = usuario("admin.rosario", "1800000021", "Diana", "Guevara", Rol.ADMIN_JUNTA, rosario);
+        Usuario secretarioRosario = usuario("secretario.rosario", "1800000022", "Pablo", "Freire", Rol.SECRETARIO, rosario);
         Usuario tesoreraRosario = usuario("tesorera.rosario", "1800000023", "Lucía", "Medina", Rol.TESORERO, rosario);
         Socio segundo = socio(rosario, alto, "1800000201", "Segundo", "Caiza", "ER-001", true, true, EstadoSocio.ACTIVO);
         Socio blanca = socio(rosario, bajo, "1800000202", "Blanca", "Tisalema", "ER-002", false, false, EstadoSocio.ACTIVO);
         socio(rosario, alto, "1800000203", "Hugo", "Llerena", "ER-003", false, false, EstadoSocio.INACTIVO);
         administrativos(rosario, alto, bajo, List.of(segundo, blanca), "-1.329600", "-78.543100");
         financieros(rosario, tesoreraRosario, List.of(segundo, blanca));
+        comunicacionesDePrueba(rosario, secretarioRosario, adminRosario, segundo);
 
         Junta santaRosa = junta("Junta Parroquial Santa Rosa", TipoJunta.PARROQUIAL, "1890000003001", "Ambato", false);
         usuario("admin.santarosa", "1800000031", "Fernando", "Ortiz", Rol.ADMIN_JUNTA, santaRosa);

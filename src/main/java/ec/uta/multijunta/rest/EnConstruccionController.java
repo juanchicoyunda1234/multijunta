@@ -10,11 +10,4 @@ public class EnConstruccionController {
     public String enConstruccion() {
         return "en-construccion";
     }
-
-    @GetMapping({
-            "/convocatorias", "/actas",
-            "/comunicaciones", "/anuncios", "/mensajes"})
-    public String moduloPendiente() {
-        return "redirect:/en-construccion";
-    }
 }

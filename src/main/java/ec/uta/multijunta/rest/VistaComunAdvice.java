@@ -8,6 +8,7 @@ import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.support.RequestContextUtils;
+import ec.uta.multijunta.service.MensajeService;
 import ec.uta.multijunta.service.NotificacionService;
 import ec.uta.multijunta.service.RecursoNoEncontradoException;
 import ec.uta.multijunta.service.UsuarioActual;
@@ -25,13 +26,26 @@ public class VistaComunAdvice {
     private final MenuService menuService;
     private final NotificacionService notificacionService;
     private final ConfiguracionJuntaService configuracion;
+    private final MensajeService mensajeService;
 
     public VistaComunAdvice(UsuarioActual usuarioActual, MenuService menuService,
-            NotificacionService notificacionService, ConfiguracionJuntaService configuracion) {
+            NotificacionService notificacionService, ConfiguracionJuntaService configuracion,
+            MensajeService mensajeService) {
         this.usuarioActual = usuarioActual;
         this.menuService = menuService;
         this.notificacionService = notificacionService;
         this.configuracion = configuracion;
+        this.mensajeService = mensajeService;
+    }
+
+    @ModelAttribute("puedeMensajes")
+    public boolean puedeMensajes() {
+        return usuarioActual.sesion().map(sesion -> MatrizPermisos.puedeVer(sesion.getRol(), "/mensajes")).orElse(false);
+    }
+
+    @ModelAttribute("mensajesNoLeidos")
+    public long mensajesNoLeidos() {
+        return mensajeService.noLeidos();
     }
 
     @ModelAttribute("sesion")
@@ -74,6 +88,13 @@ public class VistaComunAdvice {
             destino = "/egresos";
         } else if (ruta.startsWith("/activos")) {
             destino = "/activos";
+        } else if (ruta.startsWith("/actas")) {
+            destino = "/actas";
+        } else if (ruta.startsWith("/comunicaciones")) {
+            destino = "/comunicaciones";
+        } else if (ruta.startsWith("/mensajes")) {
+            clave = "archivo.grande";
+            destino = "/mensajes";
         } else {
             clave = "configuracion.logoInvalido";
         }

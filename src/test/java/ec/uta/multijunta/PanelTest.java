@@ -91,17 +91,17 @@ class PanelTest {
     }
 
     @Test
-    @DisplayName("HU7-3 y HU7-4 tarjetas sin módulo muestran 'Disponible próximamente' y cada una enlaza a su módulo")
+    @DisplayName("HU7-3 y HU7-4 todas las tarjetas tienen valor real (005) y cada una enlaza a su módulo")
     void proximamenteYEnlaces() throws Exception {
         Usuario tesorero = fabrica.usuario(Rol.TESORERO, junta);
         Map<String, PanelService.Tarjeta> panel = tarjetas(tesorero);
-        assertThat(panel.get("Mensajes no leídos").valor()).isNull();
-        assertThat(panel.get("Mensajes no leídos").monto()).isNull();
+        assertThat(panel.get("Mensajes no leídos").valor()).isZero();
+        assertThat(panel.get("Mensajes no leídos").ruta()).isEqualTo("/mensajes");
         assertThat(panel.get("Saldo actual").ruta()).isEqualTo("/reportes");
         assertThat(panel.get("Deuda por cobrar").ruta()).isEqualTo("/pagos");
         assertThat(panel.get("Socios activos").ruta()).isEqualTo("/socios");
         mvc.perform(get("/panel").with(fabrica.sesion(tesorero)))
-                .andExpect(content().string(containsString("Disponible próximamente")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(containsString("Disponible próximamente"))))
                 .andExpect(content().string(containsString("href=\"/pagos\"")));
     }
 

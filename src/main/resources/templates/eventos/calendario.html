@@ -12,6 +12,11 @@
                     data-bs-target="#modalNuevo">Nuevo Evento</button>
         </div>
         <div th:replace="~{fragments/layout :: mensajes}"></div>
+        <div class="alert alert-info d-flex flex-wrap justify-content-between align-items-center gap-2"
+             th:if="${ofrecerConvocatoria != null}">
+            <span th:text="#{convocatoria.ofrecer}">Ofrecer</span>
+            <a class="btn btn-verde btn-sm" th:href="@{/convocatorias/nueva(eventoId=${ofrecerConvocatoria})}">Crear convocatoria</a>
+        </div>
         <div class="d-flex justify-content-between align-items-center mb-3">
             <a class="btn btn-outline-dark btn-sm" th:href="@{/eventos(mes=${mesAnterior})}" aria-label="Mes anterior">&laquo;</a>
             <span class="fw-semibold" th:text="${mesTexto}">Mes</span>

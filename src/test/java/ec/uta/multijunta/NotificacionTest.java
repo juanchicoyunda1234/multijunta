@@ -60,7 +60,7 @@ class NotificacionTest {
     @DisplayName("HU5-1 la campana muestra el número de no leídas y nada cuando no hay")
     void contador() throws Exception {
         mvc.perform(get("/panel").with(fabrica.sesion(admin)))
-                .andExpect(content().string(not(containsString("contadorNotificaciones"))));
+                .andExpect(content().string(not(containsString("id=\"contadorNotificaciones\""))));
         servicio.crear(admin, "Aviso uno", "Mensaje uno", "/panel");
         servicio.crear(admin, "Aviso dos", "Mensaje dos", "/panel");
         mvc.perform(get("/panel").with(fabrica.sesion(admin)))

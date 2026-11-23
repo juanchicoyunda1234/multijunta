@@ -82,6 +82,15 @@ public class Socio extends Usuario {
         this.celular = celular;
     }
 
+    @Override
+    public boolean isPuedeIngresar() {
+        return super.isPuedeIngresar() && estado == EstadoSocio.ACTIVO;
+    }
+
+    public boolean isNotificable() {
+        return tieneCuenta && isPuedeIngresar();
+    }
+
     public boolean isTieneCuenta() {
         return tieneCuenta;
     }

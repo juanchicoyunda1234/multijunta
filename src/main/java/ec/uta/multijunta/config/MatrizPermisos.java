@@ -87,13 +87,14 @@ public final class MatrizPermisos {
             new Entrada("CU19", "Comunicaciones externas", "bi-envelope-paper", "/comunicaciones", false,
                     Set.of(SECRETARIO), Set.of(ADMIN_JUNTA)),
             new Entrada("CU17", "Mi información", "bi-person-vcard", "/mi-informacion", false,
-                    Set.of(SOCIO), NINGUNO),
+                    NINGUNO, Set.of(SOCIO)),
             new Entrada("CU32", "Anuncios y repositorio", "bi-newspaper", "/anuncios", false,
-                    Set.of(SOCIO), NINGUNO),
+                    NINGUNO, Set.of(SOCIO)),
             new Entrada("CU18", "Mensajes", "bi-chat-dots", "/mensajes", false,
                     Set.of(ADMIN_JUNTA, SECRETARIO, TESORERO, SOCIO), NINGUNO),
             new Entrada("CU22", null, null, "/cuenta", false, TODOS, NINGUNO),
             new Entrada("CU29", null, null, "/notificaciones", false, TODOS, NINGUNO),
+            new Entrada("CU29", null, null, "/contadores", true, TODOS, NINGUNO),
             new Entrada("CU20", null, null, "/inicio", false, TODOS, NINGUNO),
             new Entrada("CU20", null, null, "/en-construccion", false, TODOS, NINGUNO));
 

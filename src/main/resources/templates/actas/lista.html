@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Actas')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: barra}"></header>
+<div class="d-lg-flex">
+    <nav th:replace="~{fragments/layout :: menu}"></nav>
+    <main class="contenido flex-grow-1 p-3 p-md-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <h1 class="h4 mb-0">Repositorio de actas</h1>
+            <button type="button" class="btn btn-verde" th:if="${puedeEditar}" data-bs-toggle="modal"
+                    data-bs-target="#modalNuevo">Subir Documento</button>
+        </div>
+        <div th:replace="~{fragments/layout :: mensajes}"></div>
+        <div th:if="${#lists.isEmpty(actas)}" class="alert alert-light border">No hay actas archivadas.</div>
+        <div class="table-responsive" th:unless="${#lists.isEmpty(actas)}">
+            <table class="table align-middle bg-white">
+                <thead>
+                <tr>
+                    <th scope="col">Acta</th>
+                    <th scope="col">Reunión</th>
+                    <th scope="col">Visibilidad</th>
+                    <th scope="col" class="text-end">Acciones</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="acta : ${actas}">
+                    <td>
+                        <span th:text="${acta.titulo}">Acta</span>
+                        <div class="small text-muted" th:if="${acta.contenido != null}" th:text="${acta.contenido}">Descripción</div>
+                    </td>
+                    <td th:text="${acta.tipoEvento.etiqueta + ' · ' + #temporals.format(acta.fecha, 'dd/MM/yyyy')}">Fecha</td>
+                    <td>
+                        <span th:if="${acta.publicaSocios}" class="badge bg-success">Público en Portal Socios</span>
+                        <span th:unless="${acta.publicaSocios}" class="badge bg-secondary">Solo directiva</span>
+                    </td>
+                    <td class="text-end text-nowrap">
+                        <a class="btn btn-outline-dark btn-sm" target="_blank" rel="noopener"
+                           th:href="@{/actas/{id}/documento(id=${acta.id})}">Abrir</a>
+                        <form th:if="${puedeEditar}" method="post" class="d-inline"
+                              th:action="@{/actas/{id}/visibilidad(id=${acta.id})}">
+                            <input type="hidden" name="publicaSocios" th:value="${!acta.publicaSocios}">
+                            <button type="submit" class="btn btn-outline-dark btn-sm"
+                                    th:text="${acta.publicaSocios} ? 'Ocultar a socios' : 'Publicar a socios'">Cambiar</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+
+<div class="modal fade" id="modalNuevo" tabindex="-1" aria-labelledby="tituloNuevo" aria-hidden="true" th:if="${puedeEditar}">
+    <div class="modal-dialog">
+        <form class="modal-content" method="post" enctype="multipart/form-data" novalidate th:object="${actaFormulario}"
+              th:action="@{/actas}">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="tituloNuevo">Archivar y publicar acta</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger" th:if="${#fields.hasGlobalErrors()}" th:each="error : ${#fields.globalErrors()}"
+                     th:text="${error}">Error</div>
+                <div class="mb-3">
+                    <label class="form-label" for="titulo">Nombre del acta</label>
+                    <input type="text" class="form-control" id="titulo" th:field="*{titulo}" maxlength="150"
+                           placeholder="Ej: Acta de Sesión Extraordinaria Nº 04" th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{titulo}"></div>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="form-label" for="fecha">Fecha de reunión</label>
+                        <input type="date" class="form-control" id="fecha" th:field="*{fecha}" th:errorclass="is-invalid">
+                        <div class="invalid-feedback" th:errors="*{fecha}"></div>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label" for="tipoEvento">Tipo de sesión</label>
+                        <select class="form-select" id="tipoEvento" th:field="*{tipoEvento}">
+                            <option th:each="opcion : ${tipos}" th:value="${opcion}" th:text="${opcion.etiqueta}">Tipo</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="contenido">Descripción</label>
+                    <textarea class="form-control" id="contenido" rows="3" th:field="*{contenido}" maxlength="1000"
+                              placeholder="Breve descripción de los puntos tratados"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="documento">Documento PDF</label>
+                    <input type="file" class="form-control" id="documento" name="documento" accept=".pdf,application/pdf">
+                    <div class="form-text">Solo PDF de hasta 5 MB.</div>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" th:field="*{publicaSocios}">
+                    <label class="form-check-label" th:for="${#ids.prev('publicaSocios')}">Público en Portal Socios</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-verde">Guardar en Archivo</button>
+            </div>
+        </form>
+    </div>
+</div>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+<script th:inline="javascript">
+    if ([[${abrir}]] === 'nuevo') {
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalNuevo')).show();
+    }
+</script>
+</body>
+</html>

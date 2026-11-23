@@ -23,6 +23,9 @@ public class ArchivoService {
     public static final String PREDIOS = "predios";
     public static final String EGRESOS = "egresos";
     public static final String ACTIVOS = "activos";
+    public static final String ACTAS = "actas";
+    public static final String COMUNICACIONES = "comunicaciones";
+    public static final String MENSAJES = "mensajes";
 
     private static final byte[] FIRMA_PNG = {(byte) 0x89, 0x50, 0x4E, 0x47};
     private static final byte[] FIRMA_JPG = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF};
@@ -72,6 +75,18 @@ public class ArchivoService {
         throw new ReglaNegocioException("archivo.documentoTipo", campo);
     }
 
+    public void validarPdf(MultipartFile archivo, String campo) {
+        if (archivo == null || archivo.isEmpty()) {
+            throw new ReglaNegocioException("acta.formato", campo);
+        }
+        if (archivo.getSize() > TAMANO_MAXIMO) {
+            throw new ReglaNegocioException("archivo.grande", campo);
+        }
+        if (!empiezaCon(leerCabecera(archivo, "acta.formato", campo), FIRMA_PDF)) {
+            throw new ReglaNegocioException("acta.formato", campo);
+        }
+    }
+
     public static boolean tieneArchivo(MultipartFile archivo) {
         return archivo != null && !archivo.isEmpty();
     }
@@ -96,6 +111,18 @@ public class ArchivoService {
             if (anterior != null && NOMBRE_VALIDO.matcher(anterior).matches()) {
                 Files.deleteIfExists(carpeta.resolve(anterior));
             }
+        } catch (IOException excepcion) {
+            throw new UncheckedIOException(excepcion);
+        }
+        return nombre;
+    }
+
+    public String guardarBytes(String subcarpeta, String prefijo, byte[] contenido, String extension) {
+        Path carpeta = carpeta(subcarpeta);
+        String nombre = prefijo + "-" + UUID.randomUUID() + "." + extension;
+        try {
+            Files.createDirectories(carpeta);
+            Files.write(carpeta.resolve(nombre), contenido);
         } catch (IOException excepcion) {
             throw new UncheckedIOException(excepcion);
         }

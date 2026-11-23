@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Comunicaciones externas')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: barra}"></header>
+<div class="d-lg-flex">
+    <nav th:replace="~{fragments/layout :: menu}"></nav>
+    <main class="contenido flex-grow-1 p-3 p-md-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <h1 class="h4 mb-0">Comunicaciones recibidas</h1>
+            <button type="button" class="btn btn-verde" th:if="${puedeEditar}" data-bs-toggle="modal"
+                    data-bs-target="#modalNuevo">Registrar Comunicación Recibida</button>
+        </div>
+        <div th:replace="~{fragments/layout :: mensajes}"></div>
+        <div th:if="${#lists.isEmpty(comunicaciones)}" class="alert alert-light border">No hay comunicaciones registradas.</div>
+        <div class="table-responsive" th:unless="${#lists.isEmpty(comunicaciones)}">
+            <table class="table align-middle bg-white">
+                <thead>
+                <tr>
+                    <th scope="col">Nº de ingreso</th>
+                    <th scope="col">Recepción</th>
+                    <th scope="col">Remitente</th>
+                    <th scope="col">Asunto</th>
+                    <th scope="col">Tipo</th>
+                    <th scope="col">Documento</th>
+                    <th scope="col" class="text-end" th:if="${puedeEditar}">Acciones</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="comunicacion : ${comunicaciones}">
+                    <td class="text-nowrap" th:text="${comunicacion.numeroIngreso}">CE</td>
+                    <td th:text="${#temporals.format(comunicacion.fecha, 'dd/MM/yyyy')}">Fecha</td>
+                    <td th:text="${comunicacion.remitente}">Remitente</td>
+                    <td th:text="${comunicacion.asunto}">Asunto</td>
+                    <td th:text="${comunicacion.tipoDocumento.etiqueta}">Tipo</td>
+                    <td>
+                        <a th:unless="${comunicacion.pendienteDigitalizacion}" target="_blank" rel="noopener"
+                           th:href="@{/comunicaciones/{id}/documento(id=${comunicacion.id})}">Ver documento</a>
+                        <span th:if="${comunicacion.pendienteDigitalizacion}" class="badge text-bg-warning"
+                              th:text="#{comunicacion.pendiente}">Pendiente</span>
+                        <button type="button" class="btn btn-outline-dark btn-sm d-block mt-1 boton-adjuntar"
+                                th:if="${puedeEditar and comunicacion.pendienteDigitalizacion}"
+                                th:attr="data-adjuntar=${comunicacion.id}">Adjuntar documento</button>
+                    </td>
+                    <td class="text-end" th:if="${puedeEditar}">
+                        <form method="post" th:action="@{/comunicaciones/{id}/eliminar(id=${comunicacion.id})}"
+                              onsubmit="return confirm('¿Eliminar esta comunicación? Su número de ingreso no se reutilizará.');">
+                            <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+
+<th:block th:if="${puedeEditar}">
+<div class="modal fade" id="modalNuevo" tabindex="-1" aria-labelledby="tituloNuevo" aria-hidden="true">
+    <div class="modal-dialog">
+        <form class="modal-content" method="post" enctype="multipart/form-data" novalidate id="formularioComunicacion"
+              th:object="${comunicacionFormulario}" th:action="@{/comunicaciones}">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="tituloNuevo">Registrar comunicación recibida</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger" th:if="${#fields.hasGlobalErrors()}" th:each="error : ${#fields.globalErrors()}"
+                     th:text="${error}">Error</div>
+                <div class="mb-3">
+                    <label class="form-label" for="remitente">Institución remitente</label>
+                    <input type="text" class="form-control requerido" id="remitente" th:field="*{remitente}" maxlength="150"
+                           placeholder="Ej: Ministerio de Ambiente / Prefectura" th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{remitente}">Este campo es obligatorio</div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="asunto">Asunto</label>
+                    <input type="text" class="form-control requerido" id="asunto" th:field="*{asunto}" maxlength="200"
+                           th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{asunto}">Este campo es obligatorio</div>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="form-label" for="fecha">Fecha de recepción</label>
+                        <input type="date" class="form-control" id="fecha" th:field="*{fecha}" th:errorclass="is-invalid">
+                        <div class="invalid-feedback" th:errors="*{fecha}"></div>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label" for="tipoDocumento">Tipo de documento</label>
+                        <select class="form-select" id="tipoDocumento" th:field="*{tipoDocumento}">
+                            <option th:each="opcion : ${tipos}" th:value="${opcion}" th:text="${opcion.etiqueta}">Tipo</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="form-label" for="documento">Documento digitalizado (opcional)</label>
+                    <input type="file" class="form-control" id="documento" name="documento" accept=".pdf,.png,.jpg,.jpeg">
+                    <div class="form-text">PDF, JPG o PNG de hasta 5 MB. Sin documento queda pendiente de digitalización.</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-verde" id="botonRegistrarComunicacion">Registrar Comunicación</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="modalAdjuntar" tabindex="-1" aria-labelledby="tituloAdjuntar" aria-hidden="true">
+    <div class="modal-dialog">
+        <form class="modal-content" method="post" enctype="multipart/form-data" id="formularioAdjuntar"
+              th:action="@{/comunicaciones/0/documento}">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="tituloAdjuntar">Adjuntar documento</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <label class="form-label" for="documentoAdjunto">Documento (PDF, JPG o PNG de hasta 5 MB)</label>
+                <input type="file" class="form-control" id="documentoAdjunto" name="documento" accept=".pdf,.png,.jpg,.jpeg" required>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-verde">Adjuntar</button>
+            </div>
+        </form>
+    </div>
+</div>
+</th:block>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+<script th:if="${puedeEditar}" th:inline="javascript">
+    const campos = document.querySelectorAll('#formularioComunicacion .requerido');
+    const botonRegistrar = document.getElementById('botonRegistrarComunicacion');
+    function revisarCampos() {
+        let completos = true;
+        campos.forEach(function (campo) {
+            const vacio = campo.value.trim() === '';
+            campo.classList.toggle('is-invalid', vacio && campo.dataset.tocado === 'si');
+            completos = completos && !vacio;
+        });
+        botonRegistrar.disabled = !completos;
+    }
+    campos.forEach(function (campo) {
+        campo.addEventListener('input', function () {
+            campo.dataset.tocado = 'si';
+            revisarCampos();
+        });
+        campo.addEventListener('blur', function () {
+            campo.dataset.tocado = 'si';
+            revisarCampos();
+        });
+    });
+    revisarCampos();
+    document.querySelectorAll('.boton-adjuntar').forEach(function (boton) {
+        boton.addEventListener('click', function () {
+            const formulario = document.getElementById('formularioAdjuntar');
+            formulario.action = formulario.action.replace(/\/comunicaciones\/\d+\/documento$/, '/comunicaciones/' + boton.dataset.adjuntar + '/documento');
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('modalAdjuntar')).show();
+        });
+    });
+    if ([[${abrir}]] === 'nuevo') {
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalNuevo')).show();
+    }
+</script>
+</body>
+</html>

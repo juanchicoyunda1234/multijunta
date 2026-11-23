@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+<ul class="nav nav-pills pestanas-socio mb-3" th:fragment="pestanas(activa)">
+    <li class="nav-item"><a class="nav-link" th:classappend="${activa == 'resumen'} ? 'active'" th:href="@{/mi-informacion}">Resumen</a></li>
+    <li class="nav-item"><a class="nav-link" th:classappend="${activa == 'estado-cuenta'} ? 'active'" th:href="@{/mi-informacion/estado-cuenta}">Estado de Cuenta</a></li>
+    <li class="nav-item"><a class="nav-link" th:classappend="${activa == 'predio'} ? 'active'" th:href="@{/mi-informacion/predio}">Mi Predio</a></li>
+    <li class="nav-item"><a class="nav-link" th:classappend="${activa == 'calendario'} ? 'active'" th:href="@{/mi-informacion/calendario}">Calendario</a></li>
+    <li class="nav-item"><a class="nav-link" th:classappend="${activa == 'anuncios'} ? 'active'" th:href="@{/anuncios}">Anuncios</a></li>
+    <li class="nav-item"><a class="nav-link" th:classappend="${activa == 'repositorio'} ? 'active'" th:href="@{/anuncios/repositorio}">Repositorio</a></li>
+    <li class="nav-item"><a class="nav-link" th:href="@{/mensajes}">Mensajes</a></li>
+</ul>
+
+<article th:fragment="convocatoria(convocatoria)" class="card card-body bg-white mb-2"
+         th:classappend="${convocatoria.fijada} ? 'convocatoria-fijada'">
+    <div class="d-flex flex-wrap justify-content-between gap-2">
+        <h3 class="h6 mb-1" th:text="${convocatoria.titulo}">Título</h3>
+        <span>
+            <span th:if="${convocatoria.fijada}" class="badge bg-danger">Fijada</span>
+            <span class="badge bg-secondary" th:text="${convocatoria.tipo.etiqueta}">Tipo</span>
+        </span>
+    </div>
+    <div class="small text-muted"
+         th:text="${#temporals.format(convocatoria.fechaEvento, 'dd/MM/yyyy') + ' · ' + #temporals.format(convocatoria.hora, 'HH:mm') + ' · ' + convocatoria.lugar}">Fecha</div>
+    <p class="mb-1 mt-2" style="white-space: pre-line" th:text="${convocatoria.contenido}">Orden del día</p>
+    <div class="small text-muted" th:text="${'Publicada el ' + #temporals.format(convocatoria.fechaPublicacion, 'dd/MM/yyyy HH:mm')}">Publicada</div>
+</article>
+</body>
+</html>

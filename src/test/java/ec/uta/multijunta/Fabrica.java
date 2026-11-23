@@ -1,7 +1,16 @@
 package ec.uta.multijunta;
 
 import ec.uta.multijunta.config.UsuarioAutenticado;
+import ec.uta.multijunta.model.Acta;
 import ec.uta.multijunta.model.Asistencia;
+import ec.uta.multijunta.model.Convocatoria;
+import ec.uta.multijunta.model.EstadoConvocatoria;
+import ec.uta.multijunta.model.PrioridadConvocatoria;
+import ec.uta.multijunta.model.TipoConvocatoria;
+import ec.uta.multijunta.repository.ActaRepository;
+import ec.uta.multijunta.repository.ConvocatoriaRepository;
+import ec.uta.multijunta.service.ArchivoService;
+import org.springframework.mock.web.MockMultipartFile;
 import ec.uta.multijunta.model.Cuota;
 import ec.uta.multijunta.model.EstadoAsistencia;
 import ec.uta.multijunta.model.Multa;
@@ -82,6 +91,47 @@ public class Fabrica {
 
     @Autowired
     private AsistenciaRepository asistencias;
+
+    @Autowired
+    private ConvocatoriaRepository convocatorias;
+
+    @Autowired
+    private ActaRepository actas;
+
+    @Autowired
+    private ArchivoService archivos;
+
+    public Convocatoria convocatoria(Junta junta, TipoConvocatoria tipo, LocalDate fechaEvento,
+            EstadoConvocatoria estado) {
+        Convocatoria convocatoria = new Convocatoria();
+        convocatoria.setJunta(junta);
+        convocatoria.setTitulo(tipo.getEtiqueta() + " " + SECUENCIA.incrementAndGet());
+        convocatoria.setTipo(tipo);
+        convocatoria.setFechaEvento(fechaEvento);
+        convocatoria.setHora(LocalTime.of(9, 0));
+        convocatoria.setLugar("Casa comunal");
+        convocatoria.setContenido("Orden del día");
+        convocatoria.setPrioridad(estado == EstadoConvocatoria.PUBLICADA
+                ? PrioridadConvocatoria.URGENTE : PrioridadConvocatoria.NORMAL);
+        convocatoria.setEstado(estado);
+        convocatoria.setFechaPublicacion(estado == EstadoConvocatoria.PUBLICADA
+                ? java.time.LocalDateTime.now().minusHours(1) : java.time.LocalDateTime.now().plusHours(1));
+        convocatoria.setAutor(secretario(junta));
+        return convocatorias.save(convocatoria);
+    }
+
+    public Acta acta(Junta junta, String titulo, boolean publica) {
+        Acta acta = new Acta();
+        acta.setJunta(junta);
+        acta.setTitulo(titulo);
+        acta.setFecha(LocalDate.now().minusDays(3));
+        acta.setTipoEvento(TipoEvento.ASAMBLEA);
+        acta.setContenido("Resumen de la sesión");
+        acta.setPublicaSocios(publica);
+        acta.setDocumentoNombre(archivos.guardar(ArchivoService.ACTAS, "acta-" + SECUENCIA.incrementAndGet(),
+                new MockMultipartFile("documento", "acta.pdf", "application/pdf", PDF_MINIMO), "pdf", null));
+        return actas.save(acta);
+    }
 
     public static final byte[] PDF_MINIMO = "%PDF-1.4 %%EOF".getBytes(java.nio.charset.StandardCharsets.US_ASCII);
 

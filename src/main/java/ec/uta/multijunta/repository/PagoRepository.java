@@ -15,6 +15,8 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
 
     long countByJuntaId(Long juntaId);
 
+    List<Pago> findTop10BySocioIdOrderByFechaDescIdDesc(Long socioId);
+
     @Query("select p from Pago p where p.junta.id = :juntaId and (:texto is null or p.numero like concat('%', :texto, '%')"
             + " or p.socio.cedula like concat('%', :texto, '%')"
             + " or lower(concat(p.socio.nombres, ' ', p.socio.apellidos)) like lower(concat('%', :texto, '%')))"

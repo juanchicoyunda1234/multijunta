@@ -30,7 +30,7 @@ public class UsuarioAutenticado implements UserDetails {
         this.nombreCompleto = usuario.getNombreCompleto();
         this.juntaId = usuario.getJunta() == null ? null : usuario.getJunta().getId();
         this.juntaNombre = usuario.getJunta() == null ? null : usuario.getJunta().getNombre();
-        this.activo = usuario.isActivo();
+        this.activo = usuario.isPuedeIngresar();
         this.juntaActiva = usuario.getJunta() == null || usuario.getJunta().isActiva();
         this.bloqueadoHasta = usuario.getBloqueadoHasta();
     }

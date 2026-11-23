@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Redactar convocatoria')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: barra}"></header>
+<div class="d-lg-flex">
+    <nav th:replace="~{fragments/layout :: menu}"></nav>
+    <main class="contenido flex-grow-1 p-3 p-md-4">
+        <h1 class="h4 mb-3" th:text="${convocatoriaId == null} ? 'Emitir Convocatoria' : 'Editar Convocatoria'">Emitir Convocatoria</h1>
+        <form method="post" novalidate th:object="${convocatoriaFormulario}" class="card card-body bg-white"
+              th:action="${convocatoriaId == null} ? @{/convocatorias} : @{/convocatorias/{id}(id=${convocatoriaId})}">
+            <div class="mb-3">
+                <label class="form-label" for="titulo">Título de la convocatoria</label>
+                <input type="text" class="form-control" id="titulo" th:field="*{titulo}" maxlength="150"
+                       placeholder="Ej: Asamblea extraordinaria de regantes" th:errorclass="is-invalid">
+                <div class="invalid-feedback" th:errors="*{titulo}"></div>
+            </div>
+            <div class="row g-2 mb-3">
+                <div class="col-12 col-sm-4">
+                    <label class="form-label" for="tipo">Tipo</label>
+                    <select class="form-select" id="tipo" th:field="*{tipo}">
+                        <option th:each="opcion : ${tipos}" th:value="${opcion}" th:text="${opcion.etiqueta}">Tipo</option>
+                    </select>
+                </div>
+                <div class="col-7 col-sm-4">
+                    <label class="form-label" for="fechaEvento">Fecha del evento</label>
+                    <input type="date" class="form-control" id="fechaEvento" th:field="*{fechaEvento}" th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{fechaEvento}"></div>
+                </div>
+                <div class="col-5 col-sm-4">
+                    <label class="form-label" for="hora">Hora</label>
+                    <input type="time" class="form-control" id="hora" th:field="*{hora}" th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{hora}"></div>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="lugar">Lugar</label>
+                <input type="text" class="form-control" id="lugar" th:field="*{lugar}" maxlength="150" th:errorclass="is-invalid">
+                <div class="invalid-feedback" th:errors="*{lugar}"></div>
+            </div>
+            <div class="mb-3">
+                <span class="form-label d-block">Prioridad de difusión</span>
+                <div class="form-check form-check-inline" th:each="opcion : ${prioridades}">
+                    <input class="form-check-input prioridad" type="radio" th:field="*{prioridad}" th:value="${opcion}">
+                    <label class="form-check-label" th:for="${#ids.prev('prioridad')}"
+                           th:text="${opcion.name() == 'URGENTE' ? 'Urgente (publicar ahora)' : 'Normal (programar)'}">Prioridad</label>
+                </div>
+            </div>
+            <div class="mb-3" id="bloquePublicacion">
+                <label class="form-label" for="fechaPublicacion">Fecha y hora de publicación</label>
+                <input type="datetime-local" class="form-control" id="fechaPublicacion" th:field="*{fechaPublicacion}"
+                       th:errorclass="is-invalid">
+                <div class="invalid-feedback" th:errors="*{fechaPublicacion}"></div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="contenido">Orden del día</label>
+                <textarea class="form-control" id="contenido" rows="6" th:field="*{contenido}" maxlength="4000"
+                          th:errorclass="is-invalid"></textarea>
+                <div class="invalid-feedback" th:errors="*{contenido}"></div>
+            </div>
+            <div class="d-flex flex-wrap justify-content-end gap-2">
+                <a class="btn btn-outline-dark" th:href="@{/convocatorias}">Cancelar</a>
+                <button type="submit" class="btn btn-verde" id="botonPublicar">Publicar Inmediatamente</button>
+            </div>
+        </form>
+    </main>
+</div>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+<script>
+    function actualizarPrioridad() {
+        const urgente = document.querySelector('.prioridad[value="URGENTE"]').checked;
+        document.getElementById('bloquePublicacion').classList.toggle('d-none', urgente);
+        document.getElementById('botonPublicar').textContent = urgente ? 'Publicar Inmediatamente' : 'Programar Publicación';
+    }
+    document.querySelectorAll('.prioridad').forEach(function (opcion) {
+        opcion.addEventListener('change', actualizarPrioridad);
+    });
+    actualizarPrioridad();
+</script>
+</body>
+</html>

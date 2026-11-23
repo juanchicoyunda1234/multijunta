@@ -18,6 +18,11 @@ Especificaciones implementadas:
   imprimible, multas sincronizadas desde las inasistencias de eventos cerrados (vía `IAsistencia`),
   egresos con comprobante y saldo actual, reverso de pagos, inventario con kardex, activos fijos
   con depreciación y reportes Balance General y Socios Morosos en PDF (OpenPDF) y Excel (Apache POI).
+- `specs/005-gestion-comunicaciones/`: "Mi Panel" del socio (resumen, estado de cuenta imprimible,
+  predio en el mapa, calendario, anuncios y repositorio), convocatorias con publicación inmediata o
+  programada, actas en PDF con visibilidad para socios, comunicaciones externas con número de
+  ingreso, mensajería entre socios y directiva con contadores que se actualizan cada 15 segundos, y
+  notificaciones de convocatorias, mensajes, multas y cuotas.
 
 Las cuentas creadas desde la aplicación (administradores, directiva y socios) usan la **cédula
 como usuario** y una contraseña temporal que se muestra una sola vez y debe cambiarse en el
@@ -30,7 +35,11 @@ predio por socio activo. Para el módulo financiero incluyen una Minga cerrada h
 ausente listo para multar, la cuota vencida "Tarifa anual 2026" con un pago parcial, dos egresos
 (uno pendiente de soporte), tres ítems de inventario (uno en stock crítico) y dos activos fijos.
 Los comprobantes de egresos y archivos de activos se guardan en `./uploads/egresos` y
-`./uploads/activos`.
+`./uploads/activos`. Para el módulo de comunicaciones incluyen una Asamblea publicada y una Minga
+programada para mañana, un acta pública y otra solo para la directiva, dos comunicaciones externas
+(una pendiente de digitalización) y una conversación del socio con cuenta con la directiva, con un
+mensaje sin leer. Las convocatorias programadas se publican solas cada minuto mientras la aplicación
+está en marcha.
 
 ## Requisitos
 

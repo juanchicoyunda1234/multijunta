@@ -195,3 +195,68 @@ body {
         padding: 0 !important;
     }
 }
+
+.deuda-cero {
+    color: var(--verde);
+}
+
+.deuda-pendiente {
+    color: #DC2626;
+}
+
+.pestanas-socio {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+.convocatoria-fijada {
+    border-left: 4px solid #DC2626;
+}
+
+.vista-mensajes {
+    min-height: 60vh;
+}
+
+.lista-contactos {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.burbujas {
+    max-height: 55vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.burbuja {
+    max-width: 80%;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.75rem;
+    background-color: #F3F4F6;
+    overflow-wrap: anywhere;
+}
+
+.burbuja-propia {
+    align-self: flex-end;
+    background-color: #DCFCE7;
+}
+
+.burbuja img {
+    max-width: 160px;
+    max-height: 160px;
+    border-radius: 0.5rem;
+    display: block;
+}
+
+@media (max-width: 767.98px) {
+    .vista-mensajes.con-conversacion .columna-contactos {
+        display: none;
+    }
+
+    .vista-mensajes.sin-conversacion .columna-conversacion {
+        display: none;
+    }
+}

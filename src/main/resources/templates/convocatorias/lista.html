@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Convocatorias')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: barra}"></header>
+<div class="d-lg-flex">
+    <nav th:replace="~{fragments/layout :: menu}"></nav>
+    <main class="contenido flex-grow-1 p-3 p-md-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <h1 class="h4 mb-0">Panel de Anuncios · Convocatorias</h1>
+            <a class="btn btn-verde" th:if="${puedeEditar}" th:href="@{/convocatorias/nueva}">Redactar Convocatoria</a>
+        </div>
+        <div th:replace="~{fragments/layout :: mensajes}"></div>
+        <div th:if="${#lists.isEmpty(convocatorias)}" class="alert alert-light border">No hay convocatorias registradas.</div>
+        <div class="table-responsive" th:unless="${#lists.isEmpty(convocatorias)}">
+            <table class="table align-middle bg-white">
+                <thead>
+                <tr>
+                    <th scope="col">Convocatoria</th>
+                    <th scope="col">Evento</th>
+                    <th scope="col">Prioridad</th>
+                    <th scope="col">Publicación</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col" class="text-end" th:if="${puedeEditar}">Acciones</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="convocatoria : ${convocatorias}">
+                    <td>
+                        <span th:text="${convocatoria.titulo}">Título</span>
+                        <div class="small text-muted" th:text="${convocatoria.tipo.etiqueta + ' · ' + convocatoria.lugar}">Tipo</div>
+                    </td>
+                    <td th:text="${#temporals.format(convocatoria.fechaEvento, 'dd/MM/yyyy') + ' ' + #temporals.format(convocatoria.hora, 'HH:mm')}">Fecha</td>
+                    <td>
+                        <span th:if="${convocatoria.prioridad.name() == 'URGENTE'}" class="badge bg-danger">Urgente</span>
+                        <span th:unless="${convocatoria.prioridad.name() == 'URGENTE'}" class="badge bg-secondary">Normal</span>
+                    </td>
+                    <td th:text="${#temporals.format(convocatoria.fechaPublicacion, 'dd/MM/yyyy HH:mm')}">Publicación</td>
+                    <td>
+                        <span th:text="${convocatoria.estado.etiqueta}">Estado</span>
+                        <span th:if="${convocatoria.vencidaSinPublicar}" class="badge text-bg-warning ms-1" th:text="#{convocatoria.vencida}">Vencida</span>
+                    </td>
+                    <td class="text-end text-nowrap" th:if="${puedeEditar}">
+                        <th:block th:if="${convocatoria.borrador}">
+                            <a class="btn btn-outline-dark btn-sm" th:href="@{/convocatorias/{id}/editar(id=${convocatoria.id})}">Editar</a>
+                            <form method="post" class="d-inline" th:action="@{/convocatorias/{id}/eliminar(id=${convocatoria.id})}">
+                                <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar</button>
+                            </form>
+                        </th:block>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

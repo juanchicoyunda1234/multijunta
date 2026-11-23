@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Repositorio')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: barra}"></header>
+<div class="d-lg-flex">
+    <nav th:replace="~{fragments/layout :: menu}"></nav>
+    <main class="contenido flex-grow-1 p-3 p-md-4">
+        <h1 class="h4 mb-3">Mi Panel</h1>
+        <ul th:replace="~{fragments/socio :: pestanas(${pestana})}"></ul>
+        <h2 class="h6">Repositorio de actas</h2>
+        <p th:if="${#lists.isEmpty(actas)}" class="text-muted" th:text="#{publicaciones.vacio}">Vacío</p>
+        <article class="card card-body bg-white mb-2" th:each="acta : ${actas}">
+            <div class="d-flex flex-wrap justify-content-between gap-2">
+                <h3 class="h6 mb-1" th:text="${acta.titulo}">Acta</h3>
+                <span class="badge bg-secondary" th:text="${acta.tipoEvento.etiqueta}">Tipo</span>
+            </div>
+            <div class="small text-muted" th:text="${'Reunión del ' + #temporals.format(acta.fecha, 'dd/MM/yyyy')}">Fecha</div>
+            <p class="mb-2 mt-1" th:if="${acta.contenido != null}" th:text="${acta.contenido}">Descripción</p>
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-dark btn-sm" target="_blank" rel="noopener"
+                   th:href="@{/anuncios/repositorio/{id}/documento(id=${acta.id})}">Abrir</a>
+                <a class="btn btn-verde btn-sm" th:attr="download=${'acta-' + acta.id + '.pdf'}"
+                   th:href="@{/anuncios/repositorio/{id}/documento(id=${acta.id})}">Descargar</a>
+            </div>
+        </article>
+    </main>
+</div>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

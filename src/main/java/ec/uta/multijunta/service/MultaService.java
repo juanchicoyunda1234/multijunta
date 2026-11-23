@@ -125,6 +125,11 @@ public class MultaService {
             total = total.add(monto);
         }
         multas.saveAll(nuevas);
+        String titulo = mensajes.getMessage("notificacion.multa.titulo", null, ESPANOL);
+        nuevas.stream()
+                .filter(multa -> multa.getSocio().isNotificable())
+                .forEach(multa -> notificaciones.crear(multa.getSocio(), titulo,
+                        multa.getMotivo() + " · $" + Montos.texto(multa.getMonto()), CuotaService.ENLACE_ESTADO_CUENTA));
         return new Resultado(nuevas.size(), total);
     }
 

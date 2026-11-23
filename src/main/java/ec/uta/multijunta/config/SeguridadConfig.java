@@ -64,7 +64,11 @@ public class SeguridadConfig {
                 for (String patron : entrada.patrones()) {
                     reglas.requestMatchers(rutas.matcher(HttpMethod.GET, patron))
                             .hasAnyRole(nombres(entrada.conLectura()));
-                    reglas.requestMatchers(rutas.matcher(patron)).hasAnyRole(nombres(entrada.completo()));
+                    if (entrada.completo().isEmpty()) {
+                        reglas.requestMatchers(rutas.matcher(patron)).denyAll();
+                    } else {
+                        reglas.requestMatchers(rutas.matcher(patron)).hasAnyRole(nombres(entrada.completo()));
+                    }
                 }
             }
             reglas.anyRequest().authenticated();
