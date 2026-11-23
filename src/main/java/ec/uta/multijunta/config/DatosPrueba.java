@@ -18,7 +18,8 @@ import ec.uta.multijunta.repository.ConvocatoriaRepository;
 import ec.uta.multijunta.repository.MensajeRepository;
 import ec.uta.multijunta.repository.SecuenciaIngresoRepository;
 import ec.uta.multijunta.service.ArchivoService;
-import java.nio.charset.StandardCharsets;
+import ec.uta.multijunta.service.PdfSimple;
+import java.time.format.DateTimeFormatter;
 import ec.uta.multijunta.model.Asistencia;
 import ec.uta.multijunta.model.CategoriaActivo;
 import ec.uta.multijunta.model.CategoriaEgreso;
@@ -130,9 +131,10 @@ public class DatosPrueba implements CommandLineRunner {
     @Autowired
     private ArchivoService archivos;
 
-    private static final byte[] PDF_DEMOSTRACION = ("%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n"
-            + "2 0 obj<</Type/Pages/Kids[]/Count 0>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n")
-            .getBytes(StandardCharsets.US_ASCII);
+    @Autowired
+    private PdfSimple pdf;
+
+    private static final DateTimeFormatter FECHA_DOCUMENTO = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private void comunicacionesDePrueba(Junta junta, Usuario secretario, Usuario admin, Socio socio) {
         LocalDate hoy = LocalDate.now();
@@ -191,7 +193,14 @@ public class DatosPrueba implements CommandLineRunner {
         acta.setPublicaSocios(publica);
         acta.setDocumentoNombre("pendiente");
         acta = actas.save(acta);
-        acta.setDocumentoNombre(archivos.guardarBytes(ArchivoService.ACTAS, "acta-" + acta.getId(), PDF_DEMOSTRACION, "pdf"));
+        byte[] contenido = pdf.generar(junta.getNombre() + " · RUC " + junta.getRuc(), titulo, List.of(
+                "Fecha de la reunión: " + fecha.format(FECHA_DOCUMENTO) + " · Tipo de sesión: Asamblea",
+                "En la casa comunal, con la asistencia de los socios registrados, se instala la sesión.",
+                "1. Constatación del quórum: se verifica la asistencia y se instala la sesión.",
+                "2. Informe de la directiva: se presenta el estado de cuentas y de los turnos de riego.",
+                "3. Varios: se acuerda la próxima minga de limpieza de la acequia matriz.",
+                "Sin más puntos que tratar, se levanta la sesión."));
+        acta.setDocumentoNombre(archivos.guardarBytes(ArchivoService.ACTAS, "acta-" + acta.getId(), contenido, "pdf"));
         actas.save(acta);
     }
 
@@ -207,8 +216,13 @@ public class DatosPrueba implements CommandLineRunner {
         comunicacion.setRegistradoPor(secretario);
         comunicacion = comunicaciones.save(comunicacion);
         if (conDocumento) {
+            byte[] contenido = pdf.generar(remitente, asunto, List.of(
+                    "Oficio recibido el " + fecha.format(FECHA_DOCUMENTO) + " por " + junta.getNombre() + ".",
+                    "Por medio del presente se comunica a la directiva de la junta el asunto indicado,"
+                            + " solicitando su atención y respuesta oportuna.",
+                    "Atentamente,", remitente));
             comunicacion.setDocumentoNombre(archivos.guardarBytes(ArchivoService.COMUNICACIONES,
-                    "comunicacion-" + comunicacion.getId(), PDF_DEMOSTRACION, "pdf"));
+                    "comunicacion-" + comunicacion.getId(), contenido, "pdf"));
             comunicaciones.save(comunicacion);
         }
     }

@@ -27,6 +27,9 @@ import ec.uta.multijunta.repository.ActaRepository;
 import ec.uta.multijunta.repository.ComunicacionExternaRepository;
 import ec.uta.multijunta.repository.ConvocatoriaRepository;
 import ec.uta.multijunta.repository.MensajeRepository;
+import ec.uta.multijunta.service.ArchivoService;
+import com.lowagie.text.pdf.PdfReader;
+import java.nio.file.Files;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.List;
@@ -104,9 +107,12 @@ class DatosPruebaTest {
     @Autowired
     private MensajeRepository mensajes;
 
+    @Autowired
+    private ArchivoService archivos;
+
     @Test
     @DisplayName("HU6-1, HU6-2 y HU6-4 carga juntas, roles, sectores y socios sin duplicar")
-    void cargaCompletaSinDuplicados() {
+    void cargaCompletaSinDuplicados() throws Exception {
         datosPrueba.cargar();
         long juntasIniciales = juntas.count();
         long usuariosIniciales = usuarios.count();
@@ -149,6 +155,12 @@ class DatosPruebaTest {
                     EstadoConvocatoria.PUBLICADA)).hasSize(1);
             assertThat(actas.findByJuntaIdOrderByFechaDescIdDesc(junta.getId())).hasSize(2);
             assertThat(actas.findByJuntaIdAndPublicaSociosTrueOrderByFechaDescIdDesc(junta.getId())).hasSize(1);
+            for (var acta : actas.findByJuntaIdOrderByFechaDescIdDesc(junta.getId())) {
+                var ruta = archivos.leer(ArchivoService.ACTAS, acta.getDocumentoNombre()).orElseThrow();
+                PdfReader lector = new PdfReader(Files.readAllBytes(ruta));
+                assertThat(lector.getNumberOfPages()).isGreaterThanOrEqualTo(1);
+                lector.close();
+            }
             assertThat(comunicaciones.findByJuntaIdOrderByFechaDescIdDesc(junta.getId())).hasSize(2)
                     .anyMatch(comunicacion -> comunicacion.isPendienteDigitalizacion());
             assertThat(mensajes.noLeidosDeSociosParaDirectiva(junta.getId())).isEqualTo(1);

@@ -14,6 +14,8 @@ import java.util.Locale;
 import org.springframework.context.MessageSource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -87,8 +89,11 @@ public class ComunicacionExternaController {
     @GetMapping("/{id}/documento")
     public ResponseEntity<Resource> documento(@PathVariable Long id) {
         Path ruta = comunicaciones.documento(id);
+        String nombre = ruta.getFileName().toString();
         return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(ArchivoService.tipoContenido(ruta.getFileName().toString())))
+                .contentType(MediaType.parseMediaType(ArchivoService.tipoContenido(nombre)))
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.inline()
+                        .filename("comunicacion-" + id + nombre.substring(nombre.lastIndexOf('.'))).build().toString())
                 .body(new FileSystemResource(ruta));
     }
 
