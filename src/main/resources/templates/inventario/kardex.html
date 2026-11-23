@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Kardex')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: barra}"></header>
+<div class="d-lg-flex">
+    <nav th:replace="~{fragments/layout :: menu}"></nav>
+    <main class="contenido flex-grow-1 p-3 p-md-4">
+        <h1 class="h4 mb-1" th:text="${'Kardex · ' + item.nombre}">Kardex</h1>
+        <p class="text-muted mb-3"
+           th:text="${item.codigo + ' · Stock actual: ' + #numbers.formatDecimal(item.stock, 1, 'COMMA', 2, 'POINT') + ' ' + item.unidadMedida + ' · Mínimo: ' + #numbers.formatDecimal(item.stockMinimo, 1, 'COMMA', 2, 'POINT') + ' · ' + item.estado.etiqueta}">Resumen</p>
+        <div th:if="${#lists.isEmpty(movimientos)}" class="alert alert-light border">El ítem no tiene movimientos.</div>
+        <div class="table-responsive" th:unless="${#lists.isEmpty(movimientos)}">
+            <table class="table align-middle bg-white">
+                <thead>
+                <tr>
+                    <th scope="col">Fecha</th>
+                    <th scope="col">Tipo</th>
+                    <th scope="col" class="monto">Cantidad</th>
+                    <th scope="col">Motivo</th>
+                    <th scope="col" class="monto">Stock resultante</th>
+                    <th scope="col">Usuario</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="movimiento : ${movimientos}">
+                    <td th:text="${#temporals.format(movimiento.fecha, 'dd/MM/yyyy HH:mm')}">Fecha</td>
+                    <td th:text="${movimiento.tipo.etiqueta}">Tipo</td>
+                    <td class="monto" th:text="${(movimiento.tipo.name() == 'SALIDA' ? '-' : '+') + #numbers.formatDecimal(movimiento.cantidad, 1, 'COMMA', 2, 'POINT')}">0</td>
+                    <td th:text="${movimiento.motivo}">Motivo</td>
+                    <td class="monto" th:text="${#numbers.formatDecimal(movimiento.stockResultante, 1, 'COMMA', 2, 'POINT')}">0</td>
+                    <td th:text="${movimiento.usuario.nombreCompleto}">Usuario</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <a class="btn btn-outline-dark" th:href="@{/inventario}">Volver al inventario</a>
+    </main>
+</div>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

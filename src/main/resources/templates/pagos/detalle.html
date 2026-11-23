@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Detalle del pago')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: barra}"></header>
+<div class="d-lg-flex">
+    <nav th:replace="~{fragments/layout :: menu}"></nav>
+    <main class="contenido flex-grow-1 p-3 p-md-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <h1 class="h4 mb-0" th:text="${'Pago ' + pago.numero}">Pago</h1>
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-dark" th:href="@{/pagos/{id}/recibo(id=${pago.id})}">Imprimir Recibo</a>
+                <button type="button" class="btn btn-outline-danger" th:if="${puedeReversar}"
+                        data-bs-toggle="modal" data-bs-target="#modalReversar">Reversar</button>
+            </div>
+        </div>
+        <div th:replace="~{fragments/layout :: mensajes}"></div>
+        <div class="alert alert-secondary" th:if="${pago.reversado and pago.reverso != null}">
+            <strong>Reversado</strong>
+            <span th:text="${' con la transacción ' + pago.reverso.numero + ' el ' + #temporals.format(pago.reverso.fecha, 'dd/MM/yyyy HH:mm')}">Detalle</span>
+            <div th:text="${'Motivo: ' + pago.reverso.motivo}">Motivo</div>
+        </div>
+        <div class="row g-3">
+            <div class="col-12 col-md-6">
+                <div class="card card-body bg-white h-100">
+                    <div class="small text-muted">Socio</div>
+                    <strong th:text="${pago.socio.nombreCompleto}">Socio</strong>
+                    <div class="small" th:text="${'CI: ' + pago.socio.cedula}">Cédula</div>
+                    <div class="mt-2 small text-muted">Estado de cuenta</div>
+                    <span th:if="${deuda.signum() == 0}" class="estado-al-dia">Al día</span>
+                    <span th:unless="${deuda.signum() == 0}"
+                          th:text="${'Deuda pendiente: $' + #numbers.formatDecimal(deuda, 1, 'COMMA', 2, 'POINT')}">Deuda</span>
+                </div>
+            </div>
+            <div class="col-12 col-md-6">
+                <div class="card card-body bg-white h-100">
+                    <div class="small text-muted">Fecha</div>
+                    <span th:text="${#temporals.format(pago.fecha, 'dd/MM/yyyy HH:mm')}">Fecha</span>
+                    <div class="small text-muted mt-2">Método</div>
+                    <span th:text="${pago.metodo.etiqueta}">Método</span>
+                    <div class="small text-muted mt-2">Registrado por</div>
+                    <span th:text="${pago.registradoPor.nombreCompleto}">Tesorero</span>
+                </div>
+            </div>
+        </div>
+        <div class="table-responsive mt-3">
+            <table class="table align-middle bg-white">
+                <thead>
+                <tr>
+                    <th scope="col">Rubro</th>
+                    <th scope="col">Tipo</th>
+                    <th scope="col" class="monto">Aplicado</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="aplicacion : ${pago.aplicaciones}">
+                    <td th:text="${aplicacion.obligacion.concepto}">Rubro</td>
+                    <td th:text="${aplicacion.tipo}">Tipo</td>
+                    <td class="monto" th:text="'$' + ${#numbers.formatDecimal(aplicacion.monto, 1, 'COMMA', 2, 'POINT')}">$0.00</td>
+                </tr>
+                </tbody>
+                <tfoot>
+                <tr>
+                    <th scope="row" colspan="2">Total</th>
+                    <th class="monto" th:text="'$' + ${#numbers.formatDecimal(pago.monto, 1, 'COMMA', 2, 'POINT')}">$0.00</th>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+        <a class="btn btn-outline-dark" th:href="@{/pagos/historial}">Volver al historial</a>
+    </main>
+</div>
+
+<div class="modal fade" id="modalReversar" tabindex="-1" aria-labelledby="tituloReversar" aria-hidden="true" th:if="${puedeReversar}">
+    <div class="modal-dialog">
+        <form class="modal-content" method="post" th:action="@{/pagos/{id}/reversar(id=${pago.id})}">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="tituloReversar">Reversar pago</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p>Se creará una transacción de reverso por el mismo monto y se devolverá el saldo a los rubros pagados.</p>
+                <label class="form-label" for="motivoReverso">Motivo</label>
+                <textarea class="form-control" id="motivoReverso" name="motivo" rows="3" maxlength="255" required></textarea>
+                <input type="hidden" name="confirmar" value="true">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-danger">Confirmar reverso</button>
+            </div>
+        </form>
+    </div>
+</div>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

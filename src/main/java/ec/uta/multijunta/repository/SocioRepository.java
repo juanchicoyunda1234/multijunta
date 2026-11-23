@@ -28,6 +28,9 @@ public interface SocioRepository extends JpaRepository<Socio, Long> {
 
     List<Socio> findBySectorIdAndTieneCuentaTrueAndActivoTrue(Long sectorId);
 
+    List<Socio> findAllByJuntaIdAndSectorIdAndEstadoOrderByApellidosAscNombresAsc(Long juntaId, Long sectorId,
+            EstadoSocio estado);
+
     @Query("select s from Socio s where s.junta.id = :juntaId and (:texto = ''"
             + " or s.cedula like concat('%', :texto, '%')"
             + " or lower(concat(s.nombres, ' ', s.apellidos)) like concat('%', :texto, '%'))"

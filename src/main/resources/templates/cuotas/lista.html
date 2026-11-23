@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Cuotas')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: barra}"></header>
+<div class="d-lg-flex">
+    <nav th:replace="~{fragments/layout :: menu}"></nav>
+    <main class="contenido flex-grow-1 p-3 p-md-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <h1 class="h4 mb-0">Cuotas y obligaciones</h1>
+            <a class="btn btn-verde" th:if="${puedeEditar}" th:href="@{/cuotas/emitir}">Emitir Cuotas</a>
+        </div>
+        <div th:replace="~{fragments/layout :: mensajes}"></div>
+        <form method="get" th:action="@{/cuotas}" class="row g-2 mb-3">
+            <div class="col-12 col-md-6">
+                <label class="visually-hidden" for="q">Buscar</label>
+                <input type="search" class="form-control" id="q" name="q" th:value="${q}"
+                       placeholder="Buscar por concepto, cédula o nombre">
+            </div>
+            <div class="col-8 col-md-4">
+                <label class="visually-hidden" for="estado">Estado</label>
+                <select class="form-select" id="estado" name="estado">
+                    <option value="">Todos los estados</option>
+                    <option th:each="opcion : ${estados}" th:value="${opcion}" th:text="${opcion.etiqueta}"
+                            th:selected="${opcion == estado}">Estado</option>
+                </select>
+            </div>
+            <div class="col-4 col-md-2 d-grid">
+                <button type="submit" class="btn btn-outline-dark">Filtrar</button>
+            </div>
+        </form>
+        <div th:if="${#lists.isEmpty(cuotas)}" class="alert alert-light border">No hay cuotas registradas.</div>
+        <div class="table-responsive" th:unless="${#lists.isEmpty(cuotas)}">
+            <table class="table align-middle bg-white">
+                <thead>
+                <tr>
+                    <th scope="col">Socio</th>
+                    <th scope="col">Concepto</th>
+                    <th scope="col" class="monto">Monto</th>
+                    <th scope="col">Vencimiento</th>
+                    <th scope="col" class="monto">Saldo</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col" class="text-end" th:if="${puedeEditar}">Acciones</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="cuota : ${cuotas}">
+                    <td>
+                        <span th:text="${cuota.socio.nombreCompleto}">Socio</span>
+                        <div class="small text-muted" th:text="${cuota.socio.cedula}">Cédula</div>
+                    </td>
+                    <td>
+                        <span th:text="${cuota.concepto}">Concepto</span>
+                        <div class="small text-muted" th:if="${cuota.motivoAnulacion != null}"
+                             th:text="'Anulada: ' + ${cuota.motivoAnulacion}">Motivo</div>
+                    </td>
+                    <td class="monto" th:text="'$' + ${#numbers.formatDecimal(cuota.monto, 1, 'COMMA', 2, 'POINT')}">$0.00</td>
+                    <td>
+                        <span th:text="${#temporals.format(cuota.fechaVencimiento, 'dd/MM/yyyy')}">Fecha</span>
+                        <span th:if="${cuota.vencida}" class="badge bg-danger ms-1">Vencida</span>
+                    </td>
+                    <td class="monto" th:text="'$' + ${#numbers.formatDecimal(cuota.saldoPendiente, 1, 'COMMA', 2, 'POINT')}">$0.00</td>
+                    <td th:text="${cuota.estado.etiqueta}">Estado</td>
+                    <td class="text-end" th:if="${puedeEditar}">
+                        <button type="button" class="btn btn-outline-danger btn-sm boton-anular"
+                                th:if="${cuota.cobrable and !cuota.tienePagosVigentes()}"
+                                th:attr="data-anular=${cuota.id}">Anular</button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+
+<div class="modal fade" id="modalAnular" tabindex="-1" aria-labelledby="tituloAnular" aria-hidden="true">
+    <div class="modal-dialog">
+        <form class="modal-content" method="post" id="formularioAnular" th:action="@{/cuotas/0/anular}">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="tituloAnular">Anular cuota</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <label class="form-label" for="motivoAnular">Motivo</label>
+                <textarea class="form-control" id="motivoAnular" name="motivo" rows="3" maxlength="255" required></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-danger">Anular</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+<script>
+    document.querySelectorAll('.boton-anular').forEach(function (boton) {
+        boton.addEventListener('click', function () {
+            const formulario = document.getElementById('formularioAnular');
+            formulario.action = formulario.action.replace(/\/cuotas\/\d+\/anular$/, '/cuotas/' + boton.dataset.anular + '/anular');
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('modalAnular')).show();
+        });
+    });
+</script>
+</body>
+</html>

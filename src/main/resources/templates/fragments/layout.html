@@ -91,6 +91,7 @@
 
 <div th:fragment="mensajes">
     <div th:if="${exito != null}" class="alert alert-success" role="alert" th:text="#{${exito}}">Éxito</div>
+    <div th:if="${exitoTexto != null}" class="alert alert-success" role="alert" th:text="${exitoTexto}">Éxito</div>
     <div th:if="${error != null}" class="alert alert-danger" role="alert" th:text="#{${error}}">Error</div>
 </div>
 

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Inventario')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: barra}"></header>
+<div class="d-lg-flex">
+    <nav th:replace="~{fragments/layout :: menu}"></nav>
+    <main class="contenido flex-grow-1 p-3 p-md-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <h1 class="h4 mb-0">Inventario · Bodega central</h1>
+            <div class="d-flex flex-wrap gap-2" th:if="${puedeEditar}">
+                <button type="button" class="btn btn-outline-dark" data-bs-toggle="modal" data-bs-target="#modalItem">Nuevo Ítem</button>
+                <button type="button" class="btn btn-verde" data-bs-toggle="modal" data-bs-target="#modalMovimiento">Nuevo Movimiento de Inventario</button>
+            </div>
+        </div>
+        <div th:replace="~{fragments/layout :: mensajes}"></div>
+        <div th:if="${#lists.isEmpty(items)}" class="alert alert-light border">No hay ítems registrados.</div>
+        <div class="table-responsive" th:unless="${#lists.isEmpty(items)}">
+            <table class="table align-middle bg-white">
+                <thead>
+                <tr>
+                    <th scope="col">Código</th>
+                    <th scope="col">Artículo / descripción</th>
+                    <th scope="col" class="monto">Stock</th>
+                    <th scope="col" class="monto">Mínimo</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col" class="text-end">Acciones</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="item : ${items}" th:classappend="${item.activo and item.critico} ? 'fila-critica'">
+                    <td th:text="${item.codigo}">INV</td>
+                    <td>
+                        <span th:text="${item.nombre}">Ítem</span>
+                        <span th:unless="${item.activo}" class="badge bg-secondary ms-1">Inactivo</span>
+                    </td>
+                    <td class="monto" th:text="${#numbers.formatDecimal(item.stock, 1, 'COMMA', 2, 'POINT') + ' ' + item.unidadMedida}">0</td>
+                    <td class="monto" th:text="${#numbers.formatDecimal(item.stockMinimo, 1, 'COMMA', 2, 'POINT')}">0</td>
+                    <td>
+                        <span th:if="${item.critico}" class="badge bg-warning text-dark">CRÍTICO</span>
+                        <span th:unless="${item.critico}" class="badge bg-success">OK</span>
+                    </td>
+                    <td class="text-end text-nowrap">
+                        <a class="btn btn-outline-dark btn-sm" th:href="@{/inventario/items/{id}(id=${item.id})}">Kardex</a>
+                        <form th:if="${puedeEditar}" method="post" class="d-inline"
+                              th:action="@{/inventario/items/{id}/estado(id=${item.id})}">
+                            <input type="hidden" name="activo" th:value="${!item.activo}">
+                            <button type="submit" class="btn btn-outline-dark btn-sm"
+                                    th:text="${item.activo} ? 'Inactivar' : 'Reactivar'">Inactivar</button>
+                        </form>
+                        <form th:if="${puedeEditar}" method="post" class="d-inline"
+                              th:action="@{/inventario/items/{id}/eliminar(id=${item.id})}">
+                            <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+
+<th:block th:if="${puedeEditar}">
+<div class="modal fade" id="modalItem" tabindex="-1" aria-labelledby="tituloItem" aria-hidden="true">
+    <div class="modal-dialog">
+        <form class="modal-content" method="post" novalidate th:object="${itemFormulario}" th:action="@{/inventario/items}">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="tituloItem">Nuevo ítem</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label" for="nombre">Nombre</label>
+                    <input type="text" class="form-control" id="nombre" th:field="*{nombre}" maxlength="120"
+                           placeholder="Ej: Tubería PVC 2 pulg." th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{nombre}"></div>
+                </div>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label class="form-label" for="unidadMedida">Unidad de medida</label>
+                        <input type="text" class="form-control" id="unidadMedida" th:field="*{unidadMedida}" maxlength="30"
+                               placeholder="Ej: unid, m" th:errorclass="is-invalid">
+                        <div class="invalid-feedback" th:errors="*{unidadMedida}"></div>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label" for="stockMinimo">Stock mínimo</label>
+                        <input type="number" class="form-control" id="stockMinimo" th:field="*{stockMinimo}" step="0.01"
+                               min="0" th:errorclass="is-invalid">
+                        <div class="invalid-feedback" th:errors="*{stockMinimo}"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-verde">Crear ítem</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="modalMovimiento" tabindex="-1" aria-labelledby="tituloMovimiento" aria-hidden="true">
+    <div class="modal-dialog">
+        <form class="modal-content" method="post" novalidate th:object="${movimientoFormulario}" th:action="@{/inventario/movimientos}">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="tituloMovimiento">Registrar movimiento de bodega</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger" th:if="${#fields.hasGlobalErrors()}" th:each="error : ${#fields.globalErrors()}"
+                     th:text="${error}">Error</div>
+                <div class="mb-3">
+                    <label class="form-label" for="itemId">Ítem</label>
+                    <select class="form-select" id="itemId" th:field="*{itemId}" th:errorclass="is-invalid">
+                        <option value="">Seleccione</option>
+                        <option th:each="item : ${items}" th:if="${item.activo}" th:value="${item.id}"
+                                th:text="${item.nombre + ' (' + item.codigo + ')'}">Ítem</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{itemId}"></div>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-7">
+                        <label class="form-label" for="tipo">Tipo de movimiento</label>
+                        <select class="form-select" id="tipo" th:field="*{tipo}">
+                            <option th:each="opcion : ${tipos}" th:value="${opcion}" th:text="${opcion.etiqueta}">Tipo</option>
+                        </select>
+                    </div>
+                    <div class="col-5">
+                        <label class="form-label" for="cantidad">Cantidad</label>
+                        <input type="number" class="form-control" id="cantidad" th:field="*{cantidad}" step="0.01" min="0.01"
+                               th:errorclass="is-invalid">
+                        <div class="invalid-feedback" th:errors="*{cantidad}"></div>
+                    </div>
+                </div>
+                <div>
+                    <label class="form-label" for="motivo">Motivo / referencia</label>
+                    <input type="text" class="form-control" id="motivo" th:field="*{motivo}" maxlength="160"
+                           placeholder="Ej: Compra, Uso en minga" th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{motivo}"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-verde">Registrar Stock</button>
+            </div>
+        </form>
+    </div>
+</div>
+</th:block>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+<script th:inline="javascript">
+    const abrir = [[${abrir}]];
+    if (abrir === 'item') {
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalItem')).show();
+    } else if (abrir === 'movimiento') {
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalMovimiento')).show();
+    }
+</script>
+</body>
+</html>

@@ -9,6 +9,7 @@ import ec.uta.multijunta.model.TipoEvento;
 import ec.uta.multijunta.repository.AsistenciaRepository;
 import ec.uta.multijunta.repository.EventoRepository;
 import ec.uta.multijunta.repository.SocioRepository;
+import ec.uta.multijunta.model.EstadoEvento;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -115,6 +116,16 @@ public class AsistenciaService implements IAsistencia {
                 .findByEventoIdAndEventoJuntaIdAndEventoAsistenciaCerradaTrueAndEstadoOrderBySocioApellidosAsc(
                         eventoId, juntaId, EstadoAsistencia.AUSENTE)
                 .stream().map(AsistenciaService::inasistencia).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<EventoSinCerrar> eventosSinCerrar(Long juntaId) {
+        return eventos.findByJuntaIdAndTipoInAndEstadoAndAsistenciaCerradaFalseAndFechaLessThanEqualOrderByFechaDesc(
+                        juntaId, TIPOS_CON_ASISTENCIA, EstadoEvento.PROGRAMADO, LocalDate.now())
+                .stream()
+                .map(evento -> new EventoSinCerrar(evento.getId(), evento.getTipo(), evento.getFecha(), evento.getLugar()))
+                .toList();
     }
 
     private void validarToma(Evento evento) {

@@ -7,6 +7,7 @@ import ec.uta.multijunta.model.Rol;
 import ec.uta.multijunta.repository.EventoRepository;
 import ec.uta.multijunta.repository.SocioRepository;
 import ec.uta.multijunta.repository.TurnoRepository;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.function.Supplier;
@@ -16,10 +17,15 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class PanelService {
 
-    public record Tarjeta(String titulo, String icono, String ruta, Long valor) {
+    public record Tarjeta(String titulo, String icono, String ruta, Long valor, BigDecimal monto) {
     }
 
-    private record Definicion(String titulo, String icono, String ruta, Supplier<Long> valor) {
+    private record Definicion(String titulo, String icono, String ruta, Supplier<Long> valor,
+                              Supplier<BigDecimal> monto) {
+
+        Definicion(String titulo, String icono, String ruta, Supplier<Long> valor) {
+            this(titulo, icono, ruta, valor, null);
+        }
     }
 
     public static final int DIAS_PROXIMOS = 7;
@@ -29,14 +35,19 @@ public class PanelService {
     private final EventoRepository eventos;
     private final TurnoRepository turnos;
     private final UsuarioActual usuarioActual;
+    private final FinanzasService finanzas;
+    private final InventarioService inventario;
 
     public PanelService(SocioRepository socios, RecuperacionService recuperacion, EventoRepository eventos,
-            TurnoRepository turnos, UsuarioActual usuarioActual) {
+            TurnoRepository turnos, UsuarioActual usuarioActual, FinanzasService finanzas,
+            InventarioService inventario) {
         this.socios = socios;
         this.recuperacion = recuperacion;
         this.eventos = eventos;
         this.turnos = turnos;
         this.usuarioActual = usuarioActual;
+        this.finanzas = finanzas;
+        this.inventario = inventario;
     }
 
     private long proximosEventosYTurnos() {
@@ -54,7 +65,8 @@ public class PanelService {
                 .filter(definicion -> MatrizPermisos.puedeVer(rol, definicion.ruta()))
                 .filter(definicion -> rol != Rol.SUPER_ADMIN)
                 .map(definicion -> new Tarjeta(definicion.titulo(), definicion.icono(), definicion.ruta(),
-                        definicion.valor() == null ? null : definicion.valor().get()))
+                        definicion.valor() == null ? null : definicion.valor().get(),
+                        definicion.monto() == null ? null : definicion.monto().get()))
                 .toList();
     }
 
@@ -67,9 +79,9 @@ public class PanelService {
                         () -> eventos.countByJuntaIdAndTipoInAndEstadoAndAsistenciaCerradaFalseAndFechaLessThanEqual(
                                 usuarioActual.juntaId(), AsistenciaService.TIPOS_CON_ASISTENCIA,
                                 EstadoEvento.PROGRAMADO, LocalDate.now())),
-                new Definicion("Saldo actual", "bi-cash-stack", "/reportes", null),
-                new Definicion("Deuda por cobrar", "bi-wallet2", "/cuotas", null),
-                new Definicion("Ítems con stock bajo", "bi-box-seam", "/inventario", null),
+                new Definicion("Saldo actual", "bi-cash-stack", "/reportes", null, finanzas::saldoActual),
+                new Definicion("Deuda por cobrar", "bi-wallet2", "/pagos", null, finanzas::deudaPorCobrar),
+                new Definicion("Ítems con stock bajo", "bi-box-seam", "/inventario", inventario::itemsConStockBajo),
                 new Definicion("Mensajes no leídos", "bi-chat-dots", "/mensajes", null),
                 new Definicion("Solicitudes de recuperación pendientes", "bi-key", "/recuperacion/solicitudes",
                         () -> (long) recuperacion.listarAtendibles().size()));

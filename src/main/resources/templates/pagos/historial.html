@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Historial de pagos')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: barra}"></header>
+<div class="d-lg-flex">
+    <nav th:replace="~{fragments/layout :: menu}"></nav>
+    <main class="contenido flex-grow-1 p-3 p-md-4">
+        <h1 class="h4 mb-3">Pagos</h1>
+        <ul class="nav nav-tabs mb-3">
+            <li class="nav-item"><a class="nav-link" th:href="@{/pagos}">Cobranzas</a></li>
+            <li class="nav-item"><a class="nav-link active" aria-current="page" th:href="@{/pagos/historial}">Historial de pagos</a></li>
+        </ul>
+        <div th:replace="~{fragments/layout :: mensajes}"></div>
+        <form method="get" th:action="@{/pagos/historial}" class="d-flex gap-2 mb-3">
+            <label class="visually-hidden" for="q">Buscar pago</label>
+            <input type="search" class="form-control" id="q" name="q" th:value="${q}" placeholder="Buscar por número, cédula o nombre">
+            <button type="submit" class="btn btn-outline-dark">Buscar</button>
+        </form>
+        <div th:if="${#lists.isEmpty(pagos)}" class="alert alert-light border">No hay pagos registrados.</div>
+        <div class="table-responsive" th:unless="${#lists.isEmpty(pagos)}">
+            <table class="table align-middle bg-white">
+                <thead>
+                <tr>
+                    <th scope="col">Número</th>
+                    <th scope="col">Fecha</th>
+                    <th scope="col">Socio</th>
+                    <th scope="col">Método</th>
+                    <th scope="col" class="monto">Monto</th>
+                    <th scope="col">Estado</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="pago : ${pagos}">
+                    <td><a th:href="@{/pagos/{id}(id=${pago.id})}" th:text="${pago.numero}">TX</a></td>
+                    <td th:text="${#temporals.format(pago.fecha, 'dd/MM/yyyy HH:mm')}">Fecha</td>
+                    <td th:text="${pago.socio.nombreCompleto}">Socio</td>
+                    <td th:text="${pago.metodo.etiqueta}">Método</td>
+                    <td class="monto" th:text="'$' + ${#numbers.formatDecimal(pago.monto, 1, 'COMMA', 2, 'POINT')}">$0.00</td>
+                    <td>
+                        <span th:if="${pago.reversado}" class="badge bg-secondary"
+                              th:text="${pago.reverso != null ? 'Reversado (' + pago.reverso.numero + ')' : 'Reversado'}">Reversado</span>
+                        <span th:unless="${pago.reversado}" class="badge bg-success">Vigente</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

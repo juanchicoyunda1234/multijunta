@@ -21,7 +21,9 @@
                         <div>
                             <div class="small text-muted" th:text="${tarjeta.titulo}">Título</div>
                             <div th:if="${tarjeta.valor != null}" class="fs-3 fw-bold" th:text="${tarjeta.valor}">0</div>
-                            <div th:if="${tarjeta.valor == null}" class="small fst-italic" th:text="#{panel.proximamente}">Disponible próximamente</div>
+                            <div th:if="${tarjeta.monto != null}" class="fs-3 fw-bold"
+                                 th:text="${(tarjeta.monto.signum() < 0 ? '-$' : '$') + #numbers.formatDecimal(tarjeta.monto.abs(), 1, 'COMMA', 2, 'POINT')}">$0.00</div>
+                            <div th:if="${tarjeta.valor == null and tarjeta.monto == null}" class="small fst-italic" th:text="#{panel.proximamente}">Disponible próximamente</div>
                         </div>
                     </div>
                 </a>

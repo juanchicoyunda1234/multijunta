@@ -105,7 +105,7 @@ class PermisosPorRolTest {
     @DisplayName("HU2-3 solo lectura no puede modificar")
     void soloLecturaNoModifica() throws Exception {
         Usuario admin = fabrica.usuario(Rol.ADMIN_JUNTA, fabrica.junta("Junta Lectura"));
-        mvc.perform(get("/pagos").with(fabrica.sesion(admin))).andExpect(redirectedUrl("/en-construccion"));
+        mvc.perform(get("/pagos").with(fabrica.sesion(admin))).andExpect(status().isOk());
         mvc.perform(post("/pagos").with(fabrica.sesion(admin)).with(csrf())).andExpect(status().isForbidden());
     }
 
@@ -119,8 +119,8 @@ class PermisosPorRolTest {
     @Test
     @DisplayName("FR-018 los módulos sin construir llevan a la página en construcción")
     void moduloEnConstruccion() throws Exception {
-        Usuario secretario = fabrica.usuario(Rol.TESORERO, fabrica.junta("Junta Construcción"));
-        mvc.perform(get("/inventario").with(fabrica.sesion(secretario))).andExpect(redirectedUrl("/en-construccion"));
+        Usuario secretario = fabrica.usuario(Rol.SECRETARIO, fabrica.junta("Junta Construcción"));
+        mvc.perform(get("/convocatorias").with(fabrica.sesion(secretario))).andExpect(redirectedUrl("/en-construccion"));
         mvc.perform(get("/en-construccion").with(fabrica.sesion(secretario)))
                 .andExpect(content().string(containsString("Módulo en construcción")));
     }

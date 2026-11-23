@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Cobranzas')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: barra}"></header>
+<div class="d-lg-flex">
+    <nav th:replace="~{fragments/layout :: menu}"></nav>
+    <main class="contenido flex-grow-1 p-3 p-md-4">
+        <h1 class="h4 mb-3">Pagos</h1>
+        <ul class="nav nav-tabs mb-3">
+            <li class="nav-item"><a class="nav-link active" aria-current="page" th:href="@{/pagos}">Cobranzas</a></li>
+            <li class="nav-item"><a class="nav-link" th:href="@{/pagos/historial}">Historial de pagos</a></li>
+        </ul>
+        <div th:replace="~{fragments/layout :: mensajes}"></div>
+        <form method="get" th:action="@{/pagos}" class="d-flex gap-2 mb-3">
+            <label class="visually-hidden" for="q">Buscar socio</label>
+            <input type="search" class="form-control" id="q" name="q" th:value="${q}" placeholder="Buscar por cédula o nombre">
+            <button type="submit" class="btn btn-outline-dark">Buscar</button>
+        </form>
+        <div th:if="${#lists.isEmpty(filas)}" class="alert alert-light border">No hay socios que coincidan.</div>
+        <div class="table-responsive" th:unless="${#lists.isEmpty(filas)}">
+            <table class="table align-middle bg-white">
+                <thead>
+                <tr>
+                    <th scope="col">Socio</th>
+                    <th scope="col">Sector</th>
+                    <th scope="col" class="monto">Deuda</th>
+                    <th scope="col" class="text-end">Acción</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="fila : ${filas}">
+                    <td>
+                        <span th:text="${fila.socio.nombreCompleto}">Socio</span>
+                        <div class="small text-muted" th:text="${fila.socio.cedula}">Cédula</div>
+                    </td>
+                    <td th:text="${fila.socio.sector.nombre}">Sector</td>
+                    <td class="monto">
+                        <span th:if="${fila.alDia}" class="estado-al-dia">Al día</span>
+                        <span th:unless="${fila.alDia}"
+                              th:text="'$' + ${#numbers.formatDecimal(fila.deuda, 1, 'COMMA', 2, 'POINT')}">$0.00</span>
+                        <span th:if="${fila.vencida}" class="badge bg-danger ms-1">Vencida</span>
+                    </td>
+                    <td class="text-end">
+                        <a class="btn btn-verde btn-sm" th:if="${puedeCobrar}"
+                           th:href="@{/pagos/cobrar/{id}(id=${fila.socio.id})}">Cobrar</a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

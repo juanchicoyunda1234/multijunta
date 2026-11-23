@@ -164,3 +164,34 @@ body {
 .tarjeta-evento-cancelada {
     opacity: 0.6;
 }
+
+.monto {
+    text-align: right;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.estado-al-dia {
+    color: var(--verde);
+    font-weight: 600;
+}
+
+.fila-critica > td {
+    background-color: #FEF3C7;
+}
+
+.recibo {
+    max-width: 640px;
+}
+
+@media print {
+    .no-imprimir,
+    header,
+    nav {
+        display: none !important;
+    }
+
+    .contenido {
+        padding: 0 !important;
+    }
+}

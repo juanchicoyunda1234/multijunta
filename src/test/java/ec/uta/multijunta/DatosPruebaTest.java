@@ -16,6 +16,12 @@ import ec.uta.multijunta.repository.EventoRepository;
 import ec.uta.multijunta.repository.PredioRepository;
 import ec.uta.multijunta.repository.RecursoRepository;
 import ec.uta.multijunta.repository.TurnoRepository;
+import ec.uta.multijunta.repository.ActivoFijoRepository;
+import ec.uta.multijunta.repository.CuotaRepository;
+import ec.uta.multijunta.repository.EgresoRepository;
+import ec.uta.multijunta.repository.ItemInventarioRepository;
+import ec.uta.multijunta.repository.PagoRepository;
+import ec.uta.multijunta.service.IAsistencia;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.List;
@@ -63,6 +69,24 @@ class DatosPruebaTest {
     @Autowired
     private PredioRepository predios;
 
+    @Autowired
+    private CuotaRepository cuotas;
+
+    @Autowired
+    private PagoRepository pagos;
+
+    @Autowired
+    private EgresoRepository egresos;
+
+    @Autowired
+    private ItemInventarioRepository items;
+
+    @Autowired
+    private ActivoFijoRepository activos;
+
+    @Autowired
+    private IAsistencia iAsistencia;
+
     @Test
     @DisplayName("HU6-1, HU6-2 y HU6-4 carga juntas, roles, sectores y socios sin duplicar")
     void cargaCompletaSinDuplicados() {
@@ -94,6 +118,15 @@ class DatosPruebaTest {
             assertThat(turnos.countByJuntaIdAndFechaBetween(junta.getId(), LocalDate.now().with(DayOfWeek.MONDAY),
                     LocalDate.now().with(DayOfWeek.FRIDAY))).isEqualTo(2);
             assertThat(predios.countByJuntaId(junta.getId())).isEqualTo(2);
+            assertThat(iAsistencia.inasistenciasDeEventosCerrados(junta.getId())).hasSize(1);
+            assertThat(cuotas.buscar(junta.getId(), null, null)).hasSize(2);
+            assertThat(pagos.buscar(junta.getId(), null)).extracting(pago -> pago.getNumero()).containsExactly("TX-000001");
+            assertThat(cuotas.deudaDeJunta(junta.getId())).isEqualByComparingTo("40.00");
+            assertThat(egresos.findByJuntaIdOrderByFechaDescIdDesc(junta.getId())).hasSize(2)
+                    .anyMatch(egreso -> egreso.isPendienteSoporte());
+            assertThat(items.findByJuntaIdOrderByNombreAsc(junta.getId())).hasSize(3);
+            assertThat(items.contarStockBajo(junta.getId())).isEqualTo(1);
+            assertThat(activos.findByJuntaIdOrderByIdDesc(junta.getId())).hasSize(2);
         }
 
         Junta suspendida = juntas.findAll().stream().filter(junta -> !junta.isActiva()).findFirst().orElseThrow();

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Egresos')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: barra}"></header>
+<div class="d-lg-flex">
+    <nav th:replace="~{fragments/layout :: menu}"></nav>
+    <main class="contenido flex-grow-1 p-3 p-md-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <h1 class="h4 mb-0">Egresos de la junta</h1>
+            <button type="button" class="btn btn-verde" th:if="${puedeEditar}" data-bs-toggle="modal"
+                    data-bs-target="#modalNuevo">Nuevo Gasto</button>
+        </div>
+        <div th:replace="~{fragments/layout :: mensajes}"></div>
+        <div class="card card-body bg-white mb-3">
+            <div class="small text-muted">Saldo Actual (ingresos menos egresos)</div>
+            <strong class="h4 mb-0" th:classappend="${saldo.signum() < 0} ? 'text-danger'"
+                    th:text="${(saldo.signum() < 0 ? '-$' : '$') + #numbers.formatDecimal(saldo.abs(), 1, 'COMMA', 2, 'POINT')}">$0.00</strong>
+        </div>
+        <div th:if="${#lists.isEmpty(egresos)}" class="alert alert-light border">No hay egresos registrados.</div>
+        <div class="table-responsive" th:unless="${#lists.isEmpty(egresos)}">
+            <table class="table align-middle bg-white">
+                <thead>
+                <tr>
+                    <th scope="col">Fecha</th>
+                    <th scope="col">Concepto</th>
+                    <th scope="col">Categoría</th>
+                    <th scope="col">Proveedor</th>
+                    <th scope="col" class="monto">Monto</th>
+                    <th scope="col">Soporte</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="egreso : ${egresos}">
+                    <td th:text="${#temporals.format(egreso.fecha, 'dd/MM/yyyy')}">Fecha</td>
+                    <td th:text="${egreso.concepto}">Concepto</td>
+                    <td th:text="${egreso.categoria.etiqueta}">Categoría</td>
+                    <td th:text="${egreso.proveedor != null ? egreso.proveedor : '—'}">Proveedor</td>
+                    <td class="monto" th:text="'$' + ${#numbers.formatDecimal(egreso.monto, 1, 'COMMA', 2, 'POINT')}">$0.00</td>
+                    <td>
+                        <a th:unless="${egreso.pendienteSoporte}" th:href="@{/egresos/{id}/comprobante(id=${egreso.id})}"
+                           target="_blank" rel="noopener">Ver factura</a>
+                        <div th:if="${egreso.pendienteSoporte}">
+                            <span class="badge text-bg-warning" th:text="#{egreso.pendienteSoporte}">Pendiente</span>
+                            <button type="button" th:if="${puedeEditar}" class="btn btn-outline-dark btn-sm mt-1 d-block boton-adjuntar"
+                                    th:attr="data-adjuntar=${egreso.id}">Adjuntar factura</button>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+
+<div class="modal fade" id="modalNuevo" tabindex="-1" aria-labelledby="tituloNuevo" aria-hidden="true" th:if="${puedeEditar}">
+    <div class="modal-dialog">
+        <form class="modal-content" method="post" enctype="multipart/form-data" novalidate th:object="${egresoFormulario}"
+              th:action="@{/egresos}">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="tituloNuevo">Registrar egreso</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger" th:if="${#fields.hasGlobalErrors()}" th:each="error : ${#fields.globalErrors()}"
+                     th:text="${error}">Error</div>
+                <div class="mb-3">
+                    <label class="form-label" for="categoria">Concepto / categoría</label>
+                    <select class="form-select" id="categoria" th:field="*{categoria}" th:errorclass="is-invalid">
+                        <option value="">Seleccione</option>
+                        <option th:each="opcion : ${categorias}" th:value="${opcion}" th:text="${opcion.etiqueta}">Categoría</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{categoria}"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="concepto">Descripción del gasto</label>
+                    <input type="text" class="form-control" id="concepto" th:field="*{concepto}" maxlength="160"
+                           th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{concepto}"></div>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="form-label" for="monto">Monto total ($)</label>
+                        <input type="number" class="form-control" id="monto" th:field="*{monto}" step="0.01" min="0.01"
+                               th:errorclass="is-invalid">
+                        <div class="invalid-feedback" th:errors="*{monto}"></div>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label" for="fecha">Fecha</label>
+                        <input type="date" class="form-control" id="fecha" th:field="*{fecha}" th:errorclass="is-invalid">
+                        <div class="invalid-feedback" th:errors="*{fecha}"></div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="proveedor">Proveedor o beneficiario</label>
+                    <input type="text" class="form-control" id="proveedor" th:field="*{proveedor}" maxlength="120"
+                           placeholder="Ej: Ferretería Central">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="comprobante">Comprobante físico / factura (opcional)</label>
+                    <input type="file" class="form-control" id="comprobante" name="comprobante" accept=".pdf,.png,.jpg,.jpeg">
+                    <div class="form-text">PDF, JPG o PNG de hasta 5 MB. Sin factura, el egreso queda pendiente de soporte.</div>
+                </div>
+                <div class="alert alert-warning mb-0" th:if="${confirmarNegativo}">
+                    <span th:text="#{egreso.fondos}">Fondos insuficientes</span>
+                    <div class="small">Si adjuntó una factura, vuelva a seleccionarla antes de confirmar.</div>
+                    <input type="hidden" name="confirmarNegativo" value="true">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-verde"
+                        th:text="${confirmarNegativo} ? 'Forzar registro negativo' : 'Registrar Salida de Dinero'">Registrar Salida de Dinero</button>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="modal fade" id="modalAdjuntar" tabindex="-1" aria-labelledby="tituloAdjuntar" aria-hidden="true" th:if="${puedeEditar}">
+    <div class="modal-dialog">
+        <form class="modal-content" method="post" enctype="multipart/form-data" id="formularioAdjuntar"
+              th:action="@{/egresos/0/comprobante}">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="tituloAdjuntar">Adjuntar factura</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <label class="form-label" for="comprobanteAdjunto">Comprobante (PDF, JPG o PNG de hasta 5 MB)</label>
+                <input type="file" class="form-control" id="comprobanteAdjunto" name="comprobante" accept=".pdf,.png,.jpg,.jpeg" required>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-verde">Adjuntar</button>
+            </div>
+        </form>
+    </div>
+</div>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+<script th:inline="javascript">
+    document.querySelectorAll('.boton-adjuntar').forEach(function (boton) {
+        boton.addEventListener('click', function () {
+            const formulario = document.getElementById('formularioAdjuntar');
+            formulario.action = formulario.action.replace(/\/egresos\/\d+\/comprobante$/, '/egresos/' + boton.dataset.adjuntar + '/comprobante');
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('modalAdjuntar')).show();
+        });
+    });
+    if ([[${abrir}]] === 'nuevo') {
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalNuevo')).show();
+    }
+</script>
+</body>
+</html>

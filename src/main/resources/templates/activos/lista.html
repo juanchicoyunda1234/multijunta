@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Activos fijos')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: barra}"></header>
+<div class="d-lg-flex">
+    <nav th:replace="~{fragments/layout :: menu}"></nav>
+    <main class="contenido flex-grow-1 p-3 p-md-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <h1 class="h4 mb-0">Activos fijos</h1>
+            <button type="button" class="btn btn-verde" th:if="${puedeEditar}" data-bs-toggle="modal"
+                    data-bs-target="#modalNuevo">Registrar Activo</button>
+        </div>
+        <div th:replace="~{fragments/layout :: mensajes}"></div>
+        <div class="card card-body bg-white mb-3">
+            <strong class="h5 mb-0"
+                    th:text="${'Patrimonio activo: $' + #numbers.formatDecimal(patrimonio, 1, 'COMMA', 2, 'POINT')}">Patrimonio</strong>
+            <span class="small text-muted">Suma de los valores en libros de los activos no dados de baja</span>
+        </div>
+        <div th:if="${#lists.isEmpty(activos)}" class="alert alert-light border">No hay activos registrados.</div>
+        <div class="table-responsive" th:unless="${#lists.isEmpty(activos)}">
+            <table class="table align-middle bg-white">
+                <thead>
+                <tr>
+                    <th scope="col">Código</th>
+                    <th scope="col">Nombre</th>
+                    <th scope="col">Categoría</th>
+                    <th scope="col">Adquisición</th>
+                    <th scope="col" class="monto">Valor de compra</th>
+                    <th scope="col" class="monto">Depreciación</th>
+                    <th scope="col" class="monto">Valor en libros</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col" class="text-end" th:if="${puedeEditar}">Acciones</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="activo : ${activos}">
+                    <td th:text="${activo.codigo}">AF</td>
+                    <td>
+                        <span th:text="${activo.nombre}">Nombre</span>
+                        <a class="small d-block" th:if="${activo.archivoNombre != null}"
+                           th:href="@{/activos/{id}/archivo(id=${activo.id})}" target="_blank" rel="noopener">Ver foto o acta</a>
+                    </td>
+                    <td th:text="${activo.categoria != null ? activo.categoria.etiqueta : 'Sin categoría'}">Categoría</td>
+                    <td th:text="${#temporals.format(activo.fechaAdquisicion, 'dd/MM/yyyy')}">Fecha</td>
+                    <td class="monto" th:text="'$' + ${#numbers.formatDecimal(activo.valorAdquisicion, 1, 'COMMA', 2, 'POINT')}">$0.00</td>
+                    <td class="monto" th:text="'$' + ${#numbers.formatDecimal(activo.depreciacionActual, 1, 'COMMA', 2, 'POINT')}">$0.00</td>
+                    <td class="monto" th:text="'$' + ${#numbers.formatDecimal(activo.valorEnLibrosActual, 1, 'COMMA', 2, 'POINT')}">$0.00</td>
+                    <td>
+                        <span th:text="${activo.estado.etiqueta}">Estado</span>
+                        <div class="small text-muted" th:if="${activo.dadoDeBaja}"
+                             th:text="${#temporals.format(activo.fechaBaja, 'dd/MM/yyyy') + ': ' + activo.motivoBaja}">Motivo</div>
+                    </td>
+                    <td class="text-end" th:if="${puedeEditar}">
+                        <button type="button" class="btn btn-outline-danger btn-sm boton-baja" th:unless="${activo.dadoDeBaja}"
+                                th:attr="data-baja=${activo.id}">Dar de Baja</button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+
+<th:block th:if="${puedeEditar}">
+<div class="modal fade" id="modalNuevo" tabindex="-1" aria-labelledby="tituloNuevo" aria-hidden="true">
+    <div class="modal-dialog">
+        <form class="modal-content" method="post" enctype="multipart/form-data" novalidate th:object="${activoFormulario}"
+              th:action="@{/activos}">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="tituloNuevo">Ficha de registro de activo fijo</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger" th:if="${#fields.hasGlobalErrors()}" th:each="error : ${#fields.globalErrors()}"
+                     th:text="${error}">Error</div>
+                <div class="mb-3">
+                    <label class="form-label" for="nombre">Nombre del activo</label>
+                    <input type="text" class="form-control" id="nombre" th:field="*{nombre}" maxlength="120"
+                           placeholder="Ej: Bomba sumergible centrífuga 5HP" th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{nombre}"></div>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-12 col-sm-6">
+                        <label class="form-label" for="categoria">Categoría</label>
+                        <select class="form-select" id="categoria" th:field="*{categoria}" th:errorclass="is-invalid">
+                            <option value="">Sin categoría (hasta $200)</option>
+                            <option th:each="opcion : ${categorias}" th:value="${opcion}"
+                                    th:text="${opcion.etiqueta + ' (' + opcion.vidaUtil + ' años)'}">Categoría</option>
+                        </select>
+                        <div class="invalid-feedback" th:errors="*{categoria}"></div>
+                    </div>
+                    <div class="col-12 col-sm-6">
+                        <label class="form-label" for="fechaAdquisicion">Fecha de adquisición</label>
+                        <input type="date" class="form-control" id="fechaAdquisicion" th:field="*{fechaAdquisicion}"
+                               th:errorclass="is-invalid">
+                        <div class="invalid-feedback" th:errors="*{fechaAdquisicion}"></div>
+                    </div>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-12 col-sm-6">
+                        <label class="form-label" for="valorAdquisicion">Valor de compra ($)</label>
+                        <input type="number" class="form-control" id="valorAdquisicion" th:field="*{valorAdquisicion}"
+                               step="0.01" min="0.01" th:errorclass="is-invalid">
+                        <div class="invalid-feedback" th:errors="*{valorAdquisicion}"></div>
+                    </div>
+                    <div class="col-12 col-sm-6">
+                        <span class="form-label d-block">Estado</span>
+                        <div class="form-check form-check-inline" th:each="opcion : ${estados}">
+                            <input class="form-check-input" type="radio" th:field="*{estado}" th:value="${opcion}">
+                            <label class="form-check-label" th:for="${#ids.prev('estado')}" th:text="${opcion.etiqueta}">Estado</label>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <label class="form-label" for="archivo">Fotografía o acta de entrega (opcional)</label>
+                    <input type="file" class="form-control" id="archivo" name="archivo" accept=".pdf,.png,.jpg,.jpeg">
+                    <div class="form-text">JPG, PNG o PDF de hasta 5 MB.</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-verde" id="botonGuardarActivo">Guardar Activo</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="modalBaja" tabindex="-1" aria-labelledby="tituloBaja" aria-hidden="true">
+    <div class="modal-dialog">
+        <form class="modal-content" method="post" id="formularioBaja" th:action="@{/activos/0/baja}">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="tituloBaja">Dar de baja</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <label class="form-label" for="motivoBaja">Motivo</label>
+                <textarea class="form-control" id="motivoBaja" name="motivo" rows="3" maxlength="255" required></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-danger">Dar de Baja</button>
+            </div>
+        </form>
+    </div>
+</div>
+</th:block>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+<script th:inline="javascript">
+    const valor = document.getElementById('valorAdquisicion');
+    const guardar = document.getElementById('botonGuardarActivo');
+    function revisarValor() {
+        const numero = parseFloat(valor.value);
+        guardar.disabled = !(numero > 0);
+    }
+    if (valor && guardar) {
+        valor.addEventListener('input', revisarValor);
+        revisarValor();
+    }
+    document.querySelectorAll('.boton-baja').forEach(function (boton) {
+        boton.addEventListener('click', function () {
+            const formulario = document.getElementById('formularioBaja');
+            formulario.action = formulario.action.replace(/\/activos\/\d+\/baja$/, '/activos/' + boton.dataset.baja + '/baja');
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('modalBaja')).show();
+        });
+    });
+    if ([[${abrir}]] === 'nuevo') {
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalNuevo')).show();
+    }
+</script>
+</body>
+</html>

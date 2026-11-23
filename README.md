@@ -14,6 +14,10 @@ Especificaciones implementadas:
   (con la interfaz `IAsistencia` para el módulo financiero), recursos de riego, calendario
   semanal de turnos, predios con mapa (Leaflet + OpenStreetMap) y correcciones de asistencia con
   aprobación del administrador.
+- `specs/004-gestion-financiera/`: cuotas y obligaciones, cobranzas con abono parcial y recibo
+  imprimible, multas sincronizadas desde las inasistencias de eventos cerrados (vía `IAsistencia`),
+  egresos con comprobante y saldo actual, reverso de pagos, inventario con kardex, activos fijos
+  con depreciación y reportes Balance General y Socios Morosos en PDF (OpenPDF) y Excel (Apache POI).
 
 Las cuentas creadas desde la aplicación (administradores, directiva y socios) usan la **cédula
 como usuario** y una contraseña temporal que se muestra una sola vez y debe cambiarse en el
@@ -22,7 +26,11 @@ necesita conexión a internet.
 
 Los datos de prueba incluyen, por cada junta activa, dos recursos, una Asamblea de ayer lista
 para tomar asistencia, una Minga y una Reunión próximas, dos turnos en la semana actual y un
-predio por socio activo.
+predio por socio activo. Para el módulo financiero incluyen una Minga cerrada hace 10 días con un
+ausente listo para multar, la cuota vencida "Tarifa anual 2026" con un pago parcial, dos egresos
+(uno pendiente de soporte), tres ítems de inventario (uno en stock crítico) y dos activos fijos.
+Los comprobantes de egresos y archivos de activos se guardan en `./uploads/egresos` y
+`./uploads/activos`.
 
 ## Requisitos
 

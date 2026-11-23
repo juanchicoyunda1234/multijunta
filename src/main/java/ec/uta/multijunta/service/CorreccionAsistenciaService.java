@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.MessageSource;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -32,16 +33,18 @@ public class CorreccionAsistenciaService {
     private final NotificacionService notificaciones;
     private final MessageSource mensajes;
     private final UsuarioActual usuarioActual;
+    private final ApplicationEventPublisher eventos;
 
     public CorreccionAsistenciaService(CorreccionAsistenciaRepository correcciones, AsistenciaRepository asistencias,
             UsuarioRepository usuarios, NotificacionService notificaciones, MessageSource mensajes,
-            UsuarioActual usuarioActual) {
+            UsuarioActual usuarioActual, ApplicationEventPublisher eventos) {
         this.correcciones = correcciones;
         this.asistencias = asistencias;
         this.usuarios = usuarios;
         this.notificaciones = notificaciones;
         this.mensajes = mensajes;
         this.usuarioActual = usuarioActual;
+        this.eventos = eventos;
     }
 
     @Transactional(readOnly = true)
@@ -105,6 +108,8 @@ public class CorreccionAsistenciaService {
             Asistencia asistencia = correccion.getAsistencia();
             asistencia.setEstado(correccion.getEstadoNuevo());
             asistencias.save(asistencia);
+            eventos.publishEvent(new AsistenciaCorregida(correccion.getJunta().getId(), asistencia.getId(),
+                    correccion.getEstadoAnterior(), correccion.getEstadoNuevo()));
         }
         correccion.setEstado(aprobar ? EstadoCorreccion.APROBADA : EstadoCorreccion.RECHAZADA);
         correccion.setFechaResolucion(LocalDateTime.now());

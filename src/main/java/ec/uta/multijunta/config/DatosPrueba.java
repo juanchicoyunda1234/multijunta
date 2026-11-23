@@ -1,6 +1,28 @@
 package ec.uta.multijunta.config;
 
+import ec.uta.multijunta.model.ActivoFijo;
+import ec.uta.multijunta.model.Asistencia;
+import ec.uta.multijunta.model.CategoriaActivo;
+import ec.uta.multijunta.model.CategoriaEgreso;
+import ec.uta.multijunta.model.Cuota;
+import ec.uta.multijunta.model.Egreso;
+import ec.uta.multijunta.model.EstadoActivo;
+import ec.uta.multijunta.model.EstadoAsistencia;
 import ec.uta.multijunta.model.EstadoSocio;
+import ec.uta.multijunta.model.ItemInventario;
+import ec.uta.multijunta.model.MetodoPago;
+import ec.uta.multijunta.model.MovimientoInventario;
+import ec.uta.multijunta.model.Pago;
+import ec.uta.multijunta.model.TipoMovimiento;
+import ec.uta.multijunta.repository.ActivoFijoRepository;
+import ec.uta.multijunta.repository.AsistenciaRepository;
+import ec.uta.multijunta.repository.CuotaRepository;
+import ec.uta.multijunta.repository.EgresoRepository;
+import ec.uta.multijunta.repository.ItemInventarioRepository;
+import ec.uta.multijunta.repository.MovimientoInventarioRepository;
+import ec.uta.multijunta.repository.PagoRepository;
+import java.time.LocalDateTime;
+import org.springframework.beans.factory.annotation.Autowired;
 import ec.uta.multijunta.model.Evento;
 import ec.uta.multijunta.model.Junta;
 import ec.uta.multijunta.model.Predio;
@@ -48,6 +70,27 @@ public class DatosPrueba implements CommandLineRunner {
     private final boolean habilitado;
     private String claveCodificada;
 
+    @Autowired
+    private AsistenciaRepository asistencias;
+
+    @Autowired
+    private CuotaRepository cuotas;
+
+    @Autowired
+    private PagoRepository pagos;
+
+    @Autowired
+    private EgresoRepository egresos;
+
+    @Autowired
+    private ItemInventarioRepository items;
+
+    @Autowired
+    private MovimientoInventarioRepository movimientos;
+
+    @Autowired
+    private ActivoFijoRepository activosFijos;
+
     public DatosPrueba(JuntaRepository juntas, SectorRepository sectores, UsuarioRepository usuarios,
             SocioService socioService, PasswordEncoder codificador, RecursoRepository recursos,
             EventoRepository eventos, TurnoRepository turnos, PredioRepository predios,
@@ -90,6 +133,108 @@ public class DatosPrueba implements CommandLineRunner {
         }
     }
 
+    private void financieros(Junta junta, Usuario tesorero, List<Socio> activos) {
+        LocalDate hoy = LocalDate.now();
+        Evento minga = evento(junta, TipoEvento.MINGA, hoy.minusDays(10), LocalTime.of(7, 0), "Acequia matriz",
+                "Minga de limpieza");
+        asistencia(minga, activos.get(0), EstadoAsistencia.JUSTIFICADO);
+        asistencia(minga, activos.get(1), EstadoAsistencia.AUSENTE);
+        minga.setAsistenciaCerrada(true);
+        eventos.save(minga);
+        Cuota primera = null;
+        for (Socio socio : activos) {
+            Cuota cuota = new Cuota();
+            cuota.setJunta(junta);
+            cuota.setSocio(socio);
+            cuota.setConcepto("Tarifa anual 2026");
+            cuota.setMonto(new BigDecimal("25.00"));
+            cuota.setSaldoPendiente(new BigDecimal("25.00"));
+            cuota.setFecha(hoy.minusDays(20));
+            cuota.setFechaVencimiento(hoy.minusDays(5));
+            cuota = cuotas.save(cuota);
+            if (primera == null) {
+                primera = cuota;
+            }
+        }
+        Pago pago = new Pago();
+        pago.setJunta(junta);
+        pago.setSocio(primera.getSocio());
+        pago.setNumero("TX-000001");
+        pago.setMonto(new BigDecimal("10.00"));
+        pago.setFecha(LocalDateTime.now().minusDays(2));
+        pago.setConcepto(primera.getConcepto());
+        pago.setMetodo(MetodoPago.EFECTIVO);
+        pago.setRegistradoPor(tesorero);
+        pago.agregar(primera, new BigDecimal("10.00"));
+        cuotas.save(primera);
+        pagos.save(pago);
+        egreso(junta, tesorero, CategoriaEgreso.MATERIALES, "Tubería PVC para ramal 3", "4.00", "Ferretería Central");
+        egreso(junta, tesorero, CategoriaEgreso.SERVICIOS_BASICOS, "Energía de la bomba", "2.50", null);
+        item(junta, tesorero, "INV-0001", "Tubería PVC 2 pulg. (6 m)", "unid", "10", "50");
+        item(junta, tesorero, "INV-0002", "Válvula de paso 2 pulg.", "unid", "15", "12");
+        item(junta, tesorero, "INV-0003", "Medidor de caudal 1/2 pulg.", "unid", "5", "28");
+        activo(junta, "AF-" + hoy.getYear() + "-0001", "Bomba sumergible centrífuga 5HP", CategoriaActivo.MAQUINARIA,
+                "1450.00", hoy.minusMonths(18));
+        activo(junta, "AF-" + hoy.getYear() + "-0002", "Computadora de tesorería", CategoriaActivo.EQUIPO_OFICINA,
+                "650.00", hoy.minusMonths(6));
+    }
+
+    private void asistencia(Evento evento, Socio socio, EstadoAsistencia estado) {
+        Asistencia asistencia = new Asistencia();
+        asistencia.setEvento(evento);
+        asistencia.setSocio(socio);
+        asistencia.setFecha(evento.getFecha());
+        asistencia.setEstado(estado);
+        asistencias.save(asistencia);
+    }
+
+    private void egreso(Junta junta, Usuario tesorero, CategoriaEgreso categoria, String concepto, String monto,
+            String proveedor) {
+        Egreso egreso = new Egreso();
+        egreso.setJunta(junta);
+        egreso.setCategoria(categoria);
+        egreso.setConcepto(concepto);
+        egreso.setMonto(new BigDecimal(monto));
+        egreso.setFecha(LocalDate.now().minusDays(1));
+        egreso.setProveedor(proveedor);
+        egreso.setRegistradoPor(tesorero);
+        egresos.save(egreso);
+    }
+
+    private void item(Junta junta, Usuario tesorero, String codigo, String nombre, String unidad, String minimo,
+            String stock) {
+        ItemInventario item = new ItemInventario();
+        item.setJunta(junta);
+        item.setCodigo(codigo);
+        item.setNombre(nombre);
+        item.setUnidadMedida(unidad);
+        item.setStockMinimo(new BigDecimal(minimo));
+        item.setStock(new BigDecimal(stock));
+        item = items.save(item);
+        MovimientoInventario movimiento = new MovimientoInventario();
+        movimiento.setItem(item);
+        movimiento.setTipo(TipoMovimiento.ENTRADA);
+        movimiento.setCantidad(new BigDecimal(stock));
+        movimiento.setMotivo("Compra");
+        movimiento.setFecha(LocalDateTime.now().minusDays(3));
+        movimiento.setStockResultante(new BigDecimal(stock));
+        movimiento.setUsuario(tesorero);
+        movimientos.save(movimiento);
+    }
+
+    private void activo(Junta junta, String codigo, String nombre, CategoriaActivo categoria, String valor,
+            LocalDate fecha) {
+        ActivoFijo activo = new ActivoFijo();
+        activo.setJunta(junta);
+        activo.setCodigo(codigo);
+        activo.setNombre(nombre);
+        activo.setCategoria(categoria);
+        activo.setValorAdquisicion(new BigDecimal(valor));
+        activo.setFechaAdquisicion(fecha);
+        activo.setEstado(EstadoActivo.NUEVO);
+        activosFijos.save(activo);
+    }
+
     private Recurso recurso(Junta junta, Sector sector, String nombre, TipoRecurso tipo, String caudal) {
         Recurso recurso = new Recurso();
         recurso.setJunta(junta);
@@ -100,7 +245,7 @@ public class DatosPrueba implements CommandLineRunner {
         return recursos.save(recurso);
     }
 
-    private void evento(Junta junta, TipoEvento tipo, LocalDate fecha, LocalTime hora, String lugar,
+    private Evento evento(Junta junta, TipoEvento tipo, LocalDate fecha, LocalTime hora, String lugar,
             String descripcion) {
         Evento evento = new Evento();
         evento.setJunta(junta);
@@ -109,7 +254,7 @@ public class DatosPrueba implements CommandLineRunner {
         evento.setHora(hora);
         evento.setLugar(lugar);
         evento.setDescripcion(descripcion);
-        eventos.save(evento);
+        return eventos.save(evento);
     }
 
     private void turno(Junta junta, Sector sector, Recurso recurso, LocalDate fecha, LocalTime inicio, LocalTime fin) {
@@ -143,7 +288,7 @@ public class DatosPrueba implements CommandLineRunner {
         Sector sur = sector(riego, "Sector Sur");
         usuario("admin.sanpedro", "1800000011", "Luis", "Paredes", Rol.ADMIN_JUNTA, riego);
         usuario("secretaria.sanpedro", "1800000012", "María", "Chicaiza", Rol.SECRETARIO, riego);
-        usuario("tesorero.sanpedro", "1800000013", "Jorge", "Villacís", Rol.TESORERO, riego);
+        Usuario tesoreroRiego = usuario("tesorero.sanpedro", "1800000013", "Jorge", "Villacís", Rol.TESORERO, riego);
         Usuario desactivado = usuario("secretario.anterior", "1800000014", "Ramiro", "Sánchez", Rol.SECRETARIO, riego);
         desactivado.setActivo(false);
         usuarios.save(desactivado);
@@ -151,17 +296,19 @@ public class DatosPrueba implements CommandLineRunner {
         Socio manuel = socio(riego, sur, "1800000102", "Manuel", "Toaquiza", "SP-002", false, false, EstadoSocio.ACTIVO);
         socio(riego, norte, "1800000103", "Carmen", "Pilla", "SP-003", false, false, EstadoSocio.INACTIVO);
         administrativos(riego, norte, sur, List.of(rosa, manuel), "-1.241700", "-78.619700");
+        financieros(riego, tesoreroRiego, List.of(rosa, manuel));
 
         Junta rosario = junta("Junta Comunitaria El Rosario", TipoJunta.COMUNITARIA, "1890000002001", "San Pedro de Pelileo", true);
         Sector alto = sector(rosario, "Sector Alto");
         Sector bajo = sector(rosario, "Sector Bajo");
         usuario("admin.rosario", "1800000021", "Diana", "Guevara", Rol.ADMIN_JUNTA, rosario);
         usuario("secretario.rosario", "1800000022", "Pablo", "Freire", Rol.SECRETARIO, rosario);
-        usuario("tesorera.rosario", "1800000023", "Lucía", "Medina", Rol.TESORERO, rosario);
+        Usuario tesoreraRosario = usuario("tesorera.rosario", "1800000023", "Lucía", "Medina", Rol.TESORERO, rosario);
         Socio segundo = socio(rosario, alto, "1800000201", "Segundo", "Caiza", "ER-001", true, true, EstadoSocio.ACTIVO);
         Socio blanca = socio(rosario, bajo, "1800000202", "Blanca", "Tisalema", "ER-002", false, false, EstadoSocio.ACTIVO);
         socio(rosario, alto, "1800000203", "Hugo", "Llerena", "ER-003", false, false, EstadoSocio.INACTIVO);
         administrativos(rosario, alto, bajo, List.of(segundo, blanca), "-1.329600", "-78.543100");
+        financieros(rosario, tesoreraRosario, List.of(segundo, blanca));
 
         Junta santaRosa = junta("Junta Parroquial Santa Rosa", TipoJunta.PARROQUIAL, "1890000003001", "Ambato", false);
         usuario("admin.santarosa", "1800000031", "Fernando", "Ortiz", Rol.ADMIN_JUNTA, santaRosa);

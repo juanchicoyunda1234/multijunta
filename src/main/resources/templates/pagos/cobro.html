@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Registrar pago')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: barra}"></header>
+<div class="d-lg-flex">
+    <nav th:replace="~{fragments/layout :: menu}"></nav>
+    <main class="contenido flex-grow-1 p-3 p-md-4">
+        <h1 class="h4 mb-3">Registrar Ingresos por Pagos</h1>
+        <form method="post" novalidate th:object="${cobroFormulario}" th:action="@{/pagos/cobrar/{id}(id=${socio.id})}"
+              class="card card-body bg-white">
+            <div class="border rounded p-2 mb-3">
+                <div class="small text-muted">Socio seleccionado</div>
+                <strong th:text="${socio.nombreCompleto + ' (CI: ' + socio.cedula + ')'}">Socio</strong>
+                <div class="small text-muted" th:text="${'Sector: ' + socio.sector.nombre}">Sector</div>
+            </div>
+            <div class="alert alert-danger" th:if="${#fields.hasGlobalErrors()}" th:each="error : ${#fields.globalErrors()}"
+                 th:text="${error}">Error</div>
+            <h2 class="h6">Detalle de rubros pendientes de cobro</h2>
+            <div th:if="${#lists.isEmpty(obligaciones)}" class="alert alert-light border">El socio no tiene obligaciones pendientes.</div>
+            <div class="form-check border rounded p-2 ps-5 mb-2" th:each="obligacion : ${obligaciones}">
+                <input class="form-check-input obligacion" type="checkbox" name="obligaciones"
+                       th:id="${'obligacion-' + obligacion.clave}" th:value="${obligacion.clave}"
+                       th:checked="${#lists.contains(cobroFormulario.obligaciones, obligacion.clave)}"
+                       th:attr="data-saldo=${obligacion.saldoPendiente}">
+                <label class="form-check-label d-flex justify-content-between gap-2 w-100" th:for="${'obligacion-' + obligacion.clave}">
+                    <span>
+                        <span th:text="${obligacion.concepto}">Concepto</span>
+                        <span class="small text-muted d-block">
+                            <span th:text="${obligacion.tipo}">Tipo</span>
+                            <span th:if="${obligacion.vencimiento != null}"
+                                  th:text="${' · Vencimiento: ' + #temporals.format(obligacion.vencimiento, 'dd/MM/yyyy')}">Vence</span>
+                            <span th:text="${' · ' + obligacion.estado.etiqueta}">Estado</span>
+                            <span th:if="${obligacion.vencida}" class="badge bg-danger ms-1">Vencida</span>
+                        </span>
+                    </span>
+                    <span class="monto" th:text="'$' + ${#numbers.formatDecimal(obligacion.saldoPendiente, 1, 'COMMA', 2, 'POINT')}">$0.00</span>
+                </label>
+            </div>
+            <div class="d-flex justify-content-between align-items-center border-top pt-2 mt-2">
+                <span>Total a cobrar</span>
+                <strong class="monto" id="totalCobrar" th:text="'$' + ${#numbers.formatDecimal(total, 1, 'COMMA', 2, 'POINT')}">$0.00</strong>
+            </div>
+            <div class="row g-3 mt-1">
+                <div class="col-6">
+                    <label class="form-label" for="monto">Monto recibido ($)</label>
+                    <input type="number" class="form-control" id="monto" th:field="*{monto}" step="0.01" min="0.01"
+                           th:errorclass="is-invalid">
+                    <div class="invalid-feedback" th:errors="*{monto}"></div>
+                </div>
+                <div class="col-6">
+                    <label class="form-label" for="metodo">Método de pago</label>
+                    <select class="form-select" id="metodo" th:field="*{metodo}">
+                        <option th:each="opcion : ${metodos}" th:value="${opcion}" th:text="${opcion.etiqueta}">Método</option>
+                    </select>
+                </div>
+            </div>
+            <div class="alert alert-warning mt-3 mb-0" th:if="${confirmarParcial}">
+                <span th:text="#{pago.confirmarParcial}">Confirmar</span>
+                <input type="hidden" name="confirmarParcial" value="true">
+            </div>
+            <div class="d-flex flex-wrap justify-content-end gap-2 mt-3">
+                <a class="btn btn-outline-dark" th:href="@{/pagos}">Cancelar</a>
+                <button type="submit" class="btn btn-verde" th:text="${confirmarParcial} ? 'Confirmar abono parcial' : 'Registrar Pago'">Registrar Pago</button>
+            </div>
+        </form>
+    </main>
+</div>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+<script>
+    function recalcularTotal() {
+        let total = 0;
+        document.querySelectorAll('.obligacion:checked').forEach(function (casilla) {
+            total += parseFloat(casilla.dataset.saldo);
+        });
+        document.getElementById('totalCobrar').textContent = '$' + total.toFixed(2);
+        document.getElementById('monto').value = total.toFixed(2);
+    }
+    document.querySelectorAll('.obligacion').forEach(function (casilla) {
+        casilla.addEventListener('change', recalcularTotal);
+    });
+</script>
+</body>
+</html>

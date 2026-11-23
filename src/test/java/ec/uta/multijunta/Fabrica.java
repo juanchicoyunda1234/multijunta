@@ -1,6 +1,14 @@
 package ec.uta.multijunta;
 
 import ec.uta.multijunta.config.UsuarioAutenticado;
+import ec.uta.multijunta.model.Asistencia;
+import ec.uta.multijunta.model.Cuota;
+import ec.uta.multijunta.model.EstadoAsistencia;
+import ec.uta.multijunta.model.Multa;
+import ec.uta.multijunta.repository.AsistenciaRepository;
+import ec.uta.multijunta.repository.CuotaRepository;
+import ec.uta.multijunta.repository.MultaRepository;
+import java.util.Map;
 import ec.uta.multijunta.model.EstadoSocio;
 import ec.uta.multijunta.model.Evento;
 import ec.uta.multijunta.model.Predio;
@@ -65,6 +73,72 @@ public class Fabrica {
 
     @Autowired
     private PredioRepository predios;
+
+    @Autowired
+    private CuotaRepository cuotas;
+
+    @Autowired
+    private MultaRepository multas;
+
+    @Autowired
+    private AsistenciaRepository asistencias;
+
+    public static final byte[] PDF_MINIMO = "%PDF-1.4 %%EOF".getBytes(java.nio.charset.StandardCharsets.US_ASCII);
+
+    public static final byte[] PNG_MINIMO = {(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0};
+
+    public Usuario tesorero(Junta junta) {
+        return usuario(Rol.TESORERO, junta);
+    }
+
+    public Cuota cuota(Socio socio, String concepto, String monto, LocalDate vencimiento) {
+        Cuota cuota = new Cuota();
+        cuota.setJunta(socio.getJunta());
+        cuota.setSocio(socio);
+        cuota.setConcepto(concepto);
+        cuota.setMonto(new BigDecimal(monto));
+        cuota.setSaldoPendiente(new BigDecimal(monto));
+        cuota.setFecha(LocalDate.now());
+        cuota.setFechaVencimiento(vencimiento);
+        return cuotas.save(cuota);
+    }
+
+    public Multa multa(Socio socio, String monto) {
+        return multa(socio, monto, monto);
+    }
+
+    public Multa multa(Socio socio, String monto, String saldo) {
+        Multa multa = new Multa();
+        multa.setJunta(socio.getJunta());
+        multa.setSocio(socio);
+        multa.setAsistenciaId(SECUENCIA.incrementAndGet());
+        multa.setEventoId(0L);
+        multa.setTipoEvento(TipoEvento.MINGA);
+        multa.setFechaEvento(LocalDate.now().minusDays(3));
+        multa.setMotivo("Inasistencia a Minga");
+        multa.setMonto(new BigDecimal(monto));
+        multa.setFecha(LocalDate.now().minusDays(1));
+        multa.setSaldoPendiente(new BigDecimal(monto));
+        if (!saldo.equals(monto)) {
+            multa.aplicar(new BigDecimal(monto).subtract(new BigDecimal(saldo)));
+        }
+        return multas.save(multa);
+    }
+
+    public Map<Socio, Asistencia> cerrarAsistencia(Evento evento, Map<Socio, EstadoAsistencia> estados) {
+        Map<Socio, Asistencia> resultado = new java.util.LinkedHashMap<>();
+        estados.forEach((socio, estado) -> {
+            Asistencia asistencia = new Asistencia();
+            asistencia.setEvento(evento);
+            asistencia.setSocio(socio);
+            asistencia.setFecha(evento.getFecha());
+            asistencia.setEstado(estado);
+            resultado.put(socio, asistencias.save(asistencia));
+        });
+        evento.setAsistenciaCerrada(true);
+        eventos.save(evento);
+        return resultado;
+    }
 
     public Evento evento(Junta junta, TipoEvento tipo, LocalDate fecha) {
         Evento evento = new Evento();

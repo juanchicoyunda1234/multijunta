@@ -19,6 +19,9 @@ public interface EventoRepository extends JpaRepository<Evento, Long> {
 
     long countByJuntaIdAndEstadoAndFechaBetween(Long juntaId, EstadoEvento estado, LocalDate desde, LocalDate hasta);
 
+    List<Evento> findByJuntaIdAndTipoInAndEstadoAndAsistenciaCerradaFalseAndFechaLessThanEqualOrderByFechaDesc(
+            Long juntaId, Collection<TipoEvento> tipos, EstadoEvento estado, LocalDate fecha);
+
     long countByJuntaIdAndTipoInAndEstadoAndAsistenciaCerradaFalseAndFechaLessThanEqual(
             Long juntaId, Collection<TipoEvento> tipos, EstadoEvento estado, LocalDate hasta);
 }

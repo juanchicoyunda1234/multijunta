@@ -21,10 +21,13 @@ public class ArchivoService {
     public static final long TAMANO_MAXIMO = 5L * 1024 * 1024;
     public static final String LOGOS = "logos";
     public static final String PREDIOS = "predios";
+    public static final String EGRESOS = "egresos";
+    public static final String ACTIVOS = "activos";
 
     private static final byte[] FIRMA_PNG = {(byte) 0x89, 0x50, 0x4E, 0x47};
     private static final byte[] FIRMA_JPG = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF};
-    private static final Pattern NOMBRE_VALIDO = Pattern.compile("[a-z]+-\\d+-[0-9a-f\\-]{36}\\.(png|jpg)");
+    private static final byte[] FIRMA_PDF = {0x25, 0x50, 0x44, 0x46};
+    private static final Pattern NOMBRE_VALIDO = Pattern.compile("[a-z]+-\\d+-[0-9a-f\\-]{36}\\.(png|jpg|pdf)");
 
     private final Path raiz;
 
@@ -47,6 +50,37 @@ public class ArchivoService {
             return "jpg";
         }
         throw new ReglaNegocioException(claveTipo, campo);
+    }
+
+    public String validarDocumento(MultipartFile archivo, String campo) {
+        if (archivo == null || archivo.isEmpty()) {
+            throw new ReglaNegocioException("archivo.documentoTipo", campo);
+        }
+        if (archivo.getSize() > TAMANO_MAXIMO) {
+            throw new ReglaNegocioException("archivo.grande", campo);
+        }
+        byte[] cabecera = leerCabecera(archivo, "archivo.documentoTipo", campo);
+        if (empiezaCon(cabecera, FIRMA_PDF)) {
+            return "pdf";
+        }
+        if (empiezaCon(cabecera, FIRMA_PNG)) {
+            return "png";
+        }
+        if (empiezaCon(cabecera, FIRMA_JPG)) {
+            return "jpg";
+        }
+        throw new ReglaNegocioException("archivo.documentoTipo", campo);
+    }
+
+    public static boolean tieneArchivo(MultipartFile archivo) {
+        return archivo != null && !archivo.isEmpty();
+    }
+
+    public static String tipoContenido(String nombre) {
+        if (nombre.endsWith(".pdf")) {
+            return "application/pdf";
+        }
+        return nombre.endsWith(".png") ? "image/png" : "image/jpeg";
     }
 
     public String extensionDeLogo(MultipartFile archivo) {

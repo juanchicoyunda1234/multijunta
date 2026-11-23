@@ -13,6 +13,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import ec.uta.multijunta.model.EstadoSocio;
 import ec.uta.multijunta.model.Junta;
+import ec.uta.multijunta.model.Multa;
+import ec.uta.multijunta.model.Recurso;
+import ec.uta.multijunta.model.Socio;
 import ec.uta.multijunta.model.Rol;
 import ec.uta.multijunta.model.Sector;
 import ec.uta.multijunta.model.Usuario;
@@ -92,12 +95,39 @@ class PanelTest {
     void proximamenteYEnlaces() throws Exception {
         Usuario tesorero = fabrica.usuario(Rol.TESORERO, junta);
         Map<String, PanelService.Tarjeta> panel = tarjetas(tesorero);
-        assertThat(panel.get("Saldo actual").valor()).isNull();
+        assertThat(panel.get("Mensajes no leídos").valor()).isNull();
+        assertThat(panel.get("Mensajes no leídos").monto()).isNull();
         assertThat(panel.get("Saldo actual").ruta()).isEqualTo("/reportes");
+        assertThat(panel.get("Deuda por cobrar").ruta()).isEqualTo("/pagos");
         assertThat(panel.get("Socios activos").ruta()).isEqualTo("/socios");
         mvc.perform(get("/panel").with(fabrica.sesion(tesorero)))
                 .andExpect(content().string(containsString("Disponible próximamente")))
-                .andExpect(content().string(containsString("href=\"/cuotas\"")));
+                .andExpect(content().string(containsString("href=\"/pagos\"")));
+    }
+
+    @Test
+    @DisplayName("FR-036 (004) saldo actual, deuda por cobrar e ítems con stock bajo solo de la junta")
+    void tarjetasFinancieras() throws Exception {
+        Usuario tesorero = fabrica.tesorero(junta);
+        Sector sector = fabrica.sector(junta);
+        Socio socio = fabrica.socio(junta, sector);
+        fabrica.cuota(socio, "Tarifa", "20.00", LocalDate.now().plusDays(5));
+        Multa multa = fabrica.multa(socio, "5.00");
+        mvc.perform(post("/pagos/cobrar/" + socio.getId()).with(fabrica.sesion(tesorero)).with(csrf())
+                .param("obligaciones", multa.getClave()).param("monto", "5").param("metodo", "EFECTIVO"));
+        for (String[] datos : new String[][] {{"Válvula", "0"}, {"Codo", "5"}}) {
+            mvc.perform(post("/inventario/items").with(fabrica.sesion(tesorero)).with(csrf())
+                    .param("nombre", datos[0]).param("unidadMedida", "unid").param("stockMinimo", datos[1]));
+        }
+        Junta otra = fabrica.junta("Junta Otra Finanzas");
+        fabrica.cuota(fabrica.socio(otra, fabrica.sector(otra)), "Tarifa", "99.00", LocalDate.now());
+        Map<String, PanelService.Tarjeta> panel = tarjetas(fabrica.usuario(Rol.ADMIN_JUNTA, junta));
+        assertThat(panel.get("Saldo actual").monto()).isEqualByComparingTo("5.00");
+        assertThat(panel.get("Deuda por cobrar").monto()).isEqualByComparingTo("20.00");
+        assertThat(panel.get("Ítems con stock bajo").valor()).isEqualTo(2);
+        mvc.perform(get("/panel").with(fabrica.sesion(tesorero)))
+                .andExpect(content().string(containsString("$5.00")))
+                .andExpect(content().string(containsString("$20.00")));
     }
 
     @Test
@@ -105,7 +135,7 @@ class PanelTest {
     void tarjetasDelModuloAdministrativo() throws Exception {
         LocalDate hoy = LocalDate.now();
         Sector sector = fabrica.sector(junta);
-        ec.uta.multijunta.model.Recurso recurso = fabrica.recurso(junta, sector, "Compuerta Panel");
+        Recurso recurso = fabrica.recurso(junta, sector, "Compuerta Panel");
         fabrica.evento(junta, TipoEvento.MINGA, hoy.plusDays(3));
         fabrica.evento(junta, TipoEvento.ASAMBLEA, hoy.plusDays(10));
         fabrica.evento(junta, TipoEvento.ASAMBLEA, hoy.minusDays(1));

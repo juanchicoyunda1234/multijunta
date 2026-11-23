@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Recibo de pago')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: barra}"></header>
+<div class="d-lg-flex">
+    <nav th:replace="~{fragments/layout :: menu}"></nav>
+    <main class="contenido flex-grow-1 p-3 p-md-4">
+        <div class="no-imprimir d-flex justify-content-end gap-2 mb-3">
+            <a class="btn btn-outline-dark" th:href="@{/pagos/{id}(id=${pago.id})}">Volver</a>
+            <button type="button" class="btn btn-verde" onclick="window.print()">Imprimir</button>
+        </div>
+        <article class="recibo card card-body bg-white mx-auto">
+            <div class="d-flex align-items-center gap-3 border-bottom pb-2 mb-3">
+                <img th:if="${logoJunta}" th:src="@{/logo/{id}(id=${junta.id})}" th:alt="'Logo de ' + ${junta.nombre}"
+                     class="logo-junta">
+                <div>
+                    <h1 class="h5 mb-0" th:text="${junta.nombre}">Junta</h1>
+                    <div class="small" th:text="${'RUC: ' + junta.ruc}">RUC</div>
+                </div>
+            </div>
+            <h2 class="h6 text-uppercase">Recibo de pago</h2>
+            <dl class="row small mb-2">
+                <dt class="col-5">Transacción</dt>
+                <dd class="col-7" th:text="${pago.numero}">TX</dd>
+                <dt class="col-5">Fecha</dt>
+                <dd class="col-7" th:text="${#temporals.format(pago.fecha, 'dd/MM/yyyy HH:mm')}">Fecha</dd>
+                <dt class="col-5">Socio</dt>
+                <dd class="col-7" th:text="${pago.socio.nombreCompleto + ' (CI: ' + pago.socio.cedula + ')'}">Socio</dd>
+                <dt class="col-5">Método</dt>
+                <dd class="col-7" th:text="${pago.metodo.etiqueta}">Método</dd>
+            </dl>
+            <table class="table table-sm">
+                <thead>
+                <tr>
+                    <th scope="col">Rubro</th>
+                    <th scope="col" class="monto">Valor</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="aplicacion : ${pago.aplicaciones}">
+                    <td th:text="${aplicacion.tipo + ': ' + aplicacion.obligacion.concepto}">Rubro</td>
+                    <td class="monto" th:text="'$' + ${#numbers.formatDecimal(aplicacion.monto, 1, 'COMMA', 2, 'POINT')}">$0.00</td>
+                </tr>
+                </tbody>
+                <tfoot>
+                <tr>
+                    <th scope="row">Total</th>
+                    <th class="monto" th:text="'$' + ${#numbers.formatDecimal(pago.monto, 1, 'COMMA', 2, 'POINT')}">$0.00</th>
+                </tr>
+                </tfoot>
+            </table>
+            <p class="small mb-0" th:if="${pago.reversado}"><strong>Este pago fue reversado.</strong></p>
+            <p class="small text-muted mt-4 mb-0" th:text="${'Recibido por: ' + pago.registradoPor.nombreCompleto}">Tesorero</p>
+        </article>
+    </main>
+</div>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

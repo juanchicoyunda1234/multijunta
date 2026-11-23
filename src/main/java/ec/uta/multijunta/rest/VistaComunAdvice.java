@@ -65,9 +65,19 @@ public class VistaComunAdvice {
         Object original = request.getAttribute(RequestDispatcher.ERROR_REQUEST_URI);
         String uri = original != null ? original.toString() : request.getRequestURI();
         String ruta = uri.substring(request.getContextPath().length());
-        boolean esPredio = ruta.startsWith("/predios");
-        RequestContextUtils.getOutputFlashMap(request)
-                .put("error", esPredio ? "predio.fotoGrande" : "configuracion.logoInvalido");
-        return esPredio ? "redirect:/socios" : "redirect:/junta/configuracion";
+        String clave = "archivo.grande";
+        String destino = "/junta/configuracion";
+        if (ruta.startsWith("/predios")) {
+            clave = "predio.fotoGrande";
+            destino = "/socios";
+        } else if (ruta.startsWith("/egresos")) {
+            destino = "/egresos";
+        } else if (ruta.startsWith("/activos")) {
+            destino = "/activos";
+        } else {
+            clave = "configuracion.logoInvalido";
+        }
+        RequestContextUtils.getOutputFlashMap(request).put("error", clave);
+        return "redirect:" + destino;
     }
 }

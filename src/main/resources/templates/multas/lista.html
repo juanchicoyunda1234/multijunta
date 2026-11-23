@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Multas')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: barra}"></header>
+<div class="d-lg-flex">
+    <nav th:replace="~{fragments/layout :: menu}"></nav>
+    <main class="contenido flex-grow-1 p-3 p-md-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <h1 class="h4 mb-0">Multas</h1>
+            <a class="btn btn-verde" th:if="${puedeSincronizar}" th:href="@{/multas/sincronizar}">Sincronizar Multas de Asistencia</a>
+            <a class="btn btn-outline-dark" th:unless="${puedeSincronizar}" th:href="@{/multas/sincronizar(vista=1)}">Ver inasistencias pendientes</a>
+        </div>
+        <div th:replace="~{fragments/layout :: mensajes}"></div>
+        <div th:if="${#lists.isEmpty(multas)}" class="alert alert-light border">No hay multas generadas.</div>
+        <div class="table-responsive" th:unless="${#lists.isEmpty(multas)}">
+            <table class="table align-middle bg-white">
+                <thead>
+                <tr>
+                    <th scope="col">Socio</th>
+                    <th scope="col">Motivo</th>
+                    <th scope="col">Fecha</th>
+                    <th scope="col" class="monto">Monto</th>
+                    <th scope="col" class="monto">Saldo</th>
+                    <th scope="col">Estado</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="multa : ${multas}">
+                    <td>
+                        <span th:text="${multa.socio.nombreCompleto}">Socio</span>
+                        <div class="small text-muted" th:text="${multa.socio.cedula}">Cédula</div>
+                    </td>
+                    <td>
+                        <span th:text="${multa.motivo}">Motivo</span>
+                        <div class="small text-muted" th:if="${multa.motivoAnulacion != null}"
+                             th:text="'Anulada: ' + ${multa.motivoAnulacion}">Anulación</div>
+                    </td>
+                    <td th:text="${#temporals.format(multa.fecha, 'dd/MM/yyyy')}">Fecha</td>
+                    <td class="monto" th:text="'$' + ${#numbers.formatDecimal(multa.monto, 1, 'COMMA', 2, 'POINT')}">$0.00</td>
+                    <td class="monto" th:text="'$' + ${#numbers.formatDecimal(multa.saldoPendiente, 1, 'COMMA', 2, 'POINT')}">$0.00</td>
+                    <td th:text="${multa.estado.etiqueta}">Estado</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+<th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>
